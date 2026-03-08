@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-gray-50 text-gray-900;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-amazon-yellow hover:bg-amazon-orange text-black font-semibold py-2 px-4 rounded transition-colors duration-200;
+  }
+  .btn-secondary {
+    @apply bg-amazon-blue hover:bg-amazon-light text-white font-semibold py-2 px-4 rounded transition-colors duration-200;
+  }
+  .card {
+    @apply bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-200;
+  }
+  .input-field {
+    @apply w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amazon-yellow focus:border-transparent;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #f1f1f1; }
+::-webkit-scrollbar-thumb { background: #888; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #555; }
