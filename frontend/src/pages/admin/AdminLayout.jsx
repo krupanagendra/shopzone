@@ -1,11 +1,12 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
-import { FaTachometerAlt, FaBoxes, FaShoppingBag, FaUsers, FaArrowLeft } from "react-icons/fa";
+import { FaTachometerAlt, FaBoxes, FaShoppingBag, FaUsers, FaRobot, FaArrowLeft } from "react-icons/fa";
 
 const nav = [
   { to: "/admin", label: "Dashboard", icon: FaTachometerAlt },
   { to: "/admin/products", label: "Products", icon: FaBoxes },
   { to: "/admin/orders", label: "Orders", icon: FaShoppingBag },
   { to: "/admin/users", label: "Users", icon: FaUsers },
+  { to: "/admin/ai-agents", label: "AI Agents", icon: FaRobot },
 ];
 
 const AdminLayout = () => {
@@ -15,6 +16,7 @@ const AdminLayout = () => {
       <aside className="w-56 bg-amazon min-h-screen flex-shrink-0">
         <div className="p-4 border-b border-gray-700">
           <h2 className="text-white font-bold text-lg">Admin Panel</h2>
+          <p className="text-gray-400 text-xs mt-1">OmniKart AI</p>
         </div>
         <nav className="py-4">
           {nav.map(({ to, label, icon: Icon }) => (

@@ -1,44 +1,113 @@
-# ShopZone - Full-Stack MERN E-Commerce Application
+# 🏠 ShopZone AI — Autonomous E-Commerce Platform
 
-A complete Amazon-style e-commerce platform built with the MERN stack, featuring Stripe payments, admin dashboard, and full product management.
+> A full-stack MERN e-commerce system powered by **6 autonomous AI agents** that manage inventory, pricing, orders, emails, reports, and admin intelligence — all without human intervention.
+
+![MERN](https://img.shields.io/badge/Stack-MERN-green) ![AI](https://img.shields.io/badge/AI-Multi--Agent-blue) ![Queue](https://img.shields.io/badge/Queue-Bull+Redis-red) ![Status](https://img.shields.io/badge/Status-Production--Ready-brightgreen)
+
+---
+
+## 🧠 Architecture Overview
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│                        ShopZone AI System                            │
+│                                                                      │
+│  ┌────────────┐    ┌────────────────────┐    ┌────────────────────┐ │
+│  │  React UI  │───▶│   Express REST API  │───▶│    MongoDB Atlas   │ │
+│  │  (Vite)    │    │   (Node.js)         │    │    (Mongoose)      │ │
+│  └────────────┘    └─────────┬──────────┘    └────────────────────┘ │
+│                              │                                       │
+│                    ┌─────────▼──────────┐                           │
+│                    │   Bull Job Queues   │◀── node-cron Scheduler   │
+│                    │   (Redis Backed)    │                           │
+│                    └─────────┬──────────┘                           │
+│                              │                                       │
+│          ┌───────────────────┼───────────────────┐                  │
+│          │                   │                   │                  │
+│  ┌───────▼──────┐  ┌────────▼───────┐  ┌───────▼──────┐          │
+│  │ Stock Agent  │  │ Order Agent    │  │ Pricing Agent│          │
+│  │ (Restock)    │  │ (Lifecycle)    │  │ (Dynamic ₹)  │          │
+│  └──────────────┘  └────────────────┘  └──────────────┘          │
+│                                                                      │
+│  ┌──────────────┐  ┌────────────────┐  ┌──────────────┐          │
+│  │ Email Agent  │  │ Report Agent   │  │ Admin AI     │          │
+│  │ (SMTP Queue) │  │ (Daily PDF)    │  │ (NLP Query)  │          │
+│  └──────────────┘  └────────────────┘  └──────────────┘          │
+└──────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🤖 AI Agents Explained
+
+### 1. 📦 Stock Agent
+- **Trigger**: 10 AM & 4 PM daily (every 2 min in demo mode)
+- **Function**: Scans all products, restocks any with `countInStock < 100` back to 100
+- **Safety**: Corrects negative stock anomalies to 0
+
+### 2. 🚚 Order Lifecycle Agent
+- **Trigger**: Every hour (every 2 min in demo mode)
+- **Function**: Automatically transitions order statuses:
+  - `processing` → `shipped` (immediate after processing)
+  - `shipped` → `delivered` (after 24 hours, or 2 min in demo mode)
+- **Safety**: Idempotency checks prevent duplicate transitions. Duplicate email flags prevent repeated notifications.
+
+### 3. 💰 Pricing Agent
+- **Trigger**: Daily at midnight (every 2 min in demo mode)
+- **Function**: Adjusts prices based on demand:
+  - Fast-moving (≥50 sales/week) → +10% price (capped at maxPrice)
+  - Slow-moving (≤5 sales/week) → -20% price (floored at minPrice) + "Limited Time Drop!" offer tag
+- **Safety**: 24-hour cooldown prevents rapid price oscillation. Min/max bounds enforced.
+
+### 4. 📧 Email Agent
+- **Trigger**: Event-driven (queue-based)
+- **Function**: Sends HTML emails via Gmail SMTP for:
+  - Order shipped/delivered notifications
+  - Pricing adjustment reports
+  - Daily performance reports
+  - Admin AI query results
+- **Safety**: 5-minute deduplication window prevents duplicate emails. Graceful failure (never crashes the system).
+
+### 5. 📊 Report Agent
+- **Trigger**: Daily at 11 AM (every 2 min in demo mode)
+- **Function**: Generates PDF report with revenue, sales count, user count, and AI suggestions. Emails the PDF to admin.
+
+### 6. 🧠 Admin AI Agent
+- **Trigger**: On-demand (REST API)
+- **Function**: Processes natural language queries:
+  - "sales today" → Real-time revenue metrics
+  - "top products" → Best sellers by sales volume
+  - "slow products" → Underperforming inventory
+  - "revenue this week" → 7-day financial summary
 
 ---
 
 ## 🚀 Features
 
-### Authentication & Users
-- Register / Login / Logout
-- JWT-based authentication with 30-day tokens
-- Role-based access control (Admin/User)
-- Protected routes for both frontend and backend
-- Profile management
+### Core E-Commerce
+- User auth (JWT, bcrypt, role-based access)
+- Product catalog with search, filters, pagination
+- Shopping cart (persistent, database-backed)
+- Stripe payments (test mode) + Cash on Delivery
+- Order tracking with visual progress steps
+- Wishlist, reviews, ratings
+- Prime membership system
+- Referral & gamification (scratch cards)
 
-### Products
-- Product listing with grid layout
-- Category, price range, and rating filters
-- Search functionality (full-text search)
-- Sort by price / rating / newest
-- Pagination (12 products/page)
-- Wishlist (toggle like system)
-- Product reviews & star ratings
+### AI-Powered Admin Dashboard
+- Revenue/sales charts (Recharts — real MongoDB data)
+- AI Agent Control Center with manual triggers
+- Real-time AI operations log with filtering
+- Pricing changes viewer
+- System health monitoring (uptime, Redis status, queue metrics)
+- Natural language admin AI query box
+- Agent last-run times and error rates
 
-### Shopping Cart
-- Add/Remove/Update cart items
-- Persistent cart saved to database
-- Real-time price calculation
-- Free shipping on orders >$100
-
-### Orders
-- Stripe TEST MODE checkout
-- Order history with status tracking
-- Visual order progress steps
-- Admin order management with status updates
-
-### Admin Panel
-- Dashboard with revenue, orders, products, users stats
-- Full CRUD for products
-- Order status management
-- User role management
+### System Architecture
+- Bull job queues with Redis for reliable async processing
+- node-cron scheduler for time-based agent triggers
+- Graceful error handling (agents never crash the server)
+- Demo mode (2-min agent intervals for live presentations)
 
 ---
 
@@ -47,183 +116,99 @@ A complete Amazon-style e-commerce platform built with the MERN stack, featuring
 ```
 ecommerce/
 ├── backend/
-│   ├── config/
-│   │   ├── db.js              # MongoDB connection
-│   │   └── cloudinary.js      # Cloudinary config
+│   ├── config/db.js                  # MongoDB connection
 │   ├── controllers/
-│   │   ├── authController.js
-│   │   ├── productController.js
-│   │   ├── cartController.js
-│   │   ├── orderController.js
-│   │   ├── paymentController.js
-│   │   ├── wishlistController.js
-│   │   └── adminController.js
-│   ├── middleware/
-│   │   ├── auth.js            # JWT protect + admin middleware
-│   │   ├── error.js           # Global error handler
-│   │   └── upload.js          # Multer config
-│   ├── models/
-│   │   ├── User.js
-│   │   ├── Product.js
-│   │   ├── Cart.js
-│   │   └── Order.js
-│   ├── routes/
-│   │   ├── auth.js
-│   │   ├── products.js
-│   │   ├── cart.js
-│   │   ├── orders.js
-│   │   ├── payment.js
-│   │   ├── wishlist.js
-│   │   └── admin.js
-│   ├── data/                  # Place CSV files here
-│   ├── seed.js                # Database seeder
-│   ├── server.js              # Express entry point
-│   └── package.json
+│   │   ├── authController.js         # Register, login, profile
+│   │   ├── productController.js      # CRUD, search, reviews
+│   │   ├── orderController.js        # Orders with bulkWrite stock updates
+│   │   ├── adminController.js        # Stats via aggregation pipeline
+│   │   ├── cartController.js         # Cart management
+│   │   ├── paymentController.js      # Stripe integration
+│   │   └── chatbotController.js      # ZoneBot AI
+│   ├── services/agents/
+│   │   ├── orderAgent.js             # Order lifecycle automation
+│   │   ├── pricingAgent.js           # Dynamic pricing engine
+│   │   ├── stockAgent.js             # Inventory management
+│   │   ├── emailAgent.js             # Email dispatch with dedup
+│   │   ├── reportAgent.js            # Daily PDF report generator
+│   │   └── adminAgent.js             # NLP admin queries
+│   ├── queues/index.js               # Bull queue setup (5 queues)
+│   ├── cron/scheduler.js             # Agent scheduling (prod + demo)
+│   ├── utils/
+│   │   ├── email.js                  # Nodemailer (Gmail SMTP)
+│   │   ├── emailService.js           # Order email HTML builder
+│   │   ├── emailTemplates.js         # AI agent email templates
+│   │   └── pdfGenerator.js           # PDFKit report generator
+│   ├── models/                       # User, Product, Order, Cart, AI_Log
+│   ├── routes/                       # REST API routes
+│   │   └── system.js                 # System health + agent triggers
+│   └── server.js                     # Express entry + graceful shutdown
 │
-└── frontend/
-    ├── src/
-    │   ├── components/
-    │   │   ├── layout/
-    │   │   │   ├── Navbar.jsx
-    │   │   │   └── Footer.jsx
-    │   │   ├── common/
-    │   │   │   ├── Spinner.jsx
-    │   │   │   ├── Rating.jsx
-    │   │   │   ├── Pagination.jsx
-    │   │   │   └── ProtectedRoute.jsx
-    │   │   ├── product/
-    │   │   │   ├── ProductCard.jsx
-    │   │   │   └── FilterSidebar.jsx
-    │   │   └── payment/
-    │   │       └── CheckoutForm.jsx
-    │   ├── pages/
-    │   │   ├── HomePage.jsx
-    │   │   ├── ProductsPage.jsx
-    │   │   ├── ProductDetailPage.jsx
-    │   │   ├── LoginPage.jsx
-    │   │   ├── RegisterPage.jsx
-    │   │   ├── CartPage.jsx
-    │   │   ├── CheckoutPage.jsx
-    │   │   ├── OrdersPage.jsx
-    │   │   ├── OrderDetailPage.jsx
-    │   │   ├── WishlistPage.jsx
-    │   │   ├── ProfilePage.jsx
-    │   │   └── admin/
-    │   │       ├── AdminLayout.jsx
-    │   │       ├── AdminDashboard.jsx
-    │   │       ├── AdminProducts.jsx
-    │   │       ├── AdminOrders.jsx
-    │   │       └── AdminUsers.jsx
-    │   ├── redux/
-    │   │   ├── store.js
-    │   │   └── slices/
-    │   │       ├── authSlice.js
-    │   │       ├── cartSlice.js
-    │   │       ├── productSlice.js
-    │   │       └── wishlistSlice.js
-    │   ├── services/
-    │   │   └── api.js          # Axios instance + all API calls
-    │   ├── App.jsx
-    │   ├── main.jsx
-    │   └── index.css
-    ├── vite.config.js
-    ├── tailwind.config.js
-    └── package.json
+├── frontend/
+│   ├── src/
+│   │   ├── pages/
+│   │   │   ├── admin/
+│   │   │   │   ├── AdminDashboard.jsx    # Full analytics dashboard
+│   │   │   │   ├── AdminAIAgents.jsx     # AI agent control center
+│   │   │   │   ├── AdminProducts.jsx     # Product CRUD
+│   │   │   │   ├── AdminOrders.jsx       # Order management
+│   │   │   │   ├── AdminUsers.jsx        # User management
+│   │   │   │   └── AdminLayout.jsx       # Sidebar layout
+│   │   │   ├── OrderDetailPage.jsx       # Enhanced order tracking
+│   │   │   └── ...                       # Other pages
+│   │   ├── services/api.js               # Axios API client
+│   │   └── redux/                        # Redux Toolkit slices
+│   └── vite.config.js
+│
+└── docs/
+    ├── REDIS_SETUP.md                    # Redis installation guide
+    ├── DEMO_SCRIPT.md                    # Step-by-step demo flow
+    └── INTERVIEW_PREP.md                 # Interview Q&A
 ```
 
 ---
 
-## ⚙️ Installation & Setup
+## ⚙️ Setup Instructions
 
 ### Prerequisites
 - Node.js v18+
-- MongoDB Atlas account (free tier works)
-- Stripe account (free, test mode)
-- (Optional) Cloudinary account for image uploads
+- MongoDB Atlas (free tier)
+- Redis (see `docs/REDIS_SETUP.md`)
+- Gmail account with App Password (for emails)
+- Stripe account (test mode)
 
-### 1. Clone / Download the project
-
-### 2. Backend Setup
+### 1. Backend Setup
 
 ```bash
 cd backend
-
-# Install dependencies
 npm install
-
-# Create .env file (copy from .env.example)
 cp .env.example .env
+# Edit .env with your credentials
+npm run seed    # Seed database with products + admin user
+npm run dev     # Start backend on port 5000
 ```
 
-Edit `backend/.env`:
-```env
-PORT=5000
-MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/shopzone
-JWT_SECRET=your_super_secret_jwt_key_here_make_it_long
-STRIPE_SECRET_KEY=sk_test_51...your_key...
-CLOUDINARY_NAME=your_cloud_name
-CLOUDINARY_API_KEY=your_api_key
-CLOUDINARY_API_SECRET=your_api_secret
-CLIENT_URL=http://localhost:5173
-```
-
-```bash
-# Seed the database with 20 sample products + admin user
-npm run seed
-
-# Start backend dev server
-npm run dev
-```
-
-Backend runs on: http://localhost:5000
-
-### 3. Frontend Setup
+### 2. Frontend Setup
 
 ```bash
 cd frontend
-
-# Install dependencies
 npm install
-
-# Create .env file
 cp .env.example .env
+# Edit .env with API URL and Stripe key
+npm run dev     # Start frontend on port 5173
 ```
 
-Edit `frontend/.env`:
-```env
-VITE_STRIPE_PUBLIC_KEY=pk_test_51...your_public_key...
-VITE_API_URL=http://localhost:5000
-```
+### 3. Enable Demo Mode
 
-```bash
-# Start frontend dev server
-npm run dev
+Add to `backend/.env`:
 ```
-
-Frontend runs on: http://localhost:5173
+DEMO_MODE=true
+```
+All AI agents will run every 2 minutes.
 
 ---
 
-## 💳 Stripe Payment Testing
-
-Use these test card details:
-| Field | Value |
-|-------|-------|
-| Card Number | 4242 4242 4242 4242 |
-| Expiry | Any future date (e.g., 12/28) |
-| CVC | Any 3 digits (e.g., 123) |
-
-### Payment Flow:
-1. Add items to cart
-2. Click "Proceed to Checkout"
-3. Fill shipping address → Continue
-4. Enter test card details
-5. Click "Pay Now"
-6. On success → order saved, cart cleared, redirect to order page
-
----
-
-## 👤 Default Admin Credentials
+## 🔑 Default Admin Credentials
 
 After running `npm run seed`:
 - **Email:** admin@ecommerce.com
@@ -231,128 +216,81 @@ After running `npm run seed`:
 
 ---
 
-## 📊 Dataset Integration (CSV)
-
-To import a Kaggle product dataset:
-
-1. Place your CSV file at `backend/data/products.csv`
-
-2. The seeder auto-maps these common column names:
-   - `name` / `product_name` / `title`
-   - `brand` / `manufacturer`
-   - `category` / `main_category`
-   - `description` / `about_product`
-   - `price` / `actual_price`
-   - `rating`
-   - `no_of_ratings` / `numReviews`
-   - `image` / `img_link`
-
-3. Run: `npm run seed`
-
-4. Up to 100 products are imported from CSV
-
----
-
 ## 🌐 API Endpoints
 
-### Auth
-- `POST /api/auth/register` — Register
-- `POST /api/auth/login` — Login
-- `GET /api/auth/profile` — Get profile (protected)
-- `PUT /api/auth/profile` — Update profile (protected)
+### Authentication
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/auth/register` | Register user |
+| POST | `/api/auth/login` | Login |
+| GET | `/api/auth/profile` | Get profile (auth) |
 
 ### Products
-- `GET /api/products` — List products (with query filters)
-- `GET /api/products/:id` — Product detail
-- `GET /api/products/categories` — All categories
-- `GET /api/products/featured` — Featured products
-- `POST /api/products` — Create product (admin)
-- `PUT /api/products/:id` — Update product (admin)
-- `DELETE /api/products/:id` — Delete product (admin)
-- `POST /api/products/:id/reviews` — Add review (protected)
-
-### Cart
-- `GET /api/cart` — Get cart (protected)
-- `POST /api/cart` — Add to cart (protected)
-- `PUT /api/cart/:itemId` — Update quantity (protected)
-- `DELETE /api/cart/:itemId` — Remove item (protected)
-- `DELETE /api/cart/clear` — Clear cart (protected)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/products` | List with filters |
+| GET | `/api/products/:id` | Product detail |
+| POST | `/api/products` | Create (admin) |
+| PUT | `/api/products/:id` | Update (admin) |
+| DELETE | `/api/products/:id` | Delete (admin) |
 
 ### Orders
-- `POST /api/orders` — Create order (protected)
-- `GET /api/orders/mine` — My orders (protected)
-- `GET /api/orders/:id` — Order details (protected)
-- `GET /api/orders` — All orders (admin)
-- `PUT /api/orders/:id/status` — Update status (admin)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/orders` | Create order |
+| GET | `/api/orders/mine` | My orders |
+| GET | `/api/orders/:id` | Order detail |
+| GET | `/api/orders` | All orders (admin) |
+| PUT | `/api/orders/:id/status` | Update status (admin) |
 
-### Payment
-- `POST /api/payment/create-payment-intent` — Create Stripe payment intent (protected)
+### AI System
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/system/status` | System health + agent metrics |
+| GET | `/api/system/dashboard-stats` | Charts data (real MongoDB) |
+| POST | `/api/system/trigger-agent` | Manually trigger agent |
+| POST | `/api/admin-ai/query` | Natural language AI query |
+| GET | `/api/admin-ai/logs` | AI operations log |
 
-### Wishlist
-- `GET /api/wishlist` — Get wishlist (protected)
-- `POST /api/wishlist/:productId` — Toggle wishlist (protected)
-
-### Admin
-- `GET /api/admin/stats` — Dashboard stats (admin)
-- `GET /api/admin/users` — All users (admin)
-- `DELETE /api/admin/users/:id` — Delete user (admin)
-- `PUT /api/admin/users/:id/role` — Update role (admin)
-
----
-
-## 🚀 Deployment Guide
-
-### Backend (Railway / Render / Heroku)
-
-1. Push backend code to GitHub
-2. Connect to Railway/Render
-3. Set environment variables (same as .env)
-4. Set build command: `npm install`
-5. Set start command: `npm start`
-
-### Frontend (Vercel / Netlify)
-
-1. Push frontend code to GitHub
-2. Connect to Vercel
-3. Set environment variables:
-   - `VITE_STRIPE_PUBLIC_KEY`
-   - `VITE_API_URL` = your backend URL
-4. Build command: `npm run build`
-5. Output directory: `dist`
-
-### MongoDB Atlas
-1. Create free cluster at mongodb.com
-2. Add `0.0.0.0/0` to IP whitelist (or your deployment IP)
-3. Copy connection string to MONGO_URI
+### Other
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET/POST | `/api/cart` | Cart operations |
+| POST | `/api/payment/create-payment-intent` | Stripe intent |
+| GET/POST | `/api/wishlist` | Wishlist toggle |
+| GET | `/api/admin/stats` | Admin statistics |
 
 ---
 
-## 🔮 Future Improvements
+## 🚀 Deployment
 
-- Email notifications for orders (NodeMailer/SendGrid)
-- Social OAuth (Google, Facebook)
-- Product image gallery (multiple images)
-- Advanced admin analytics with charts
-- Inventory alerts (low stock notifications)
-- Coupon/discount code system
-- Real-time order tracking with WebSockets
-- Product recommendation engine
-- Multi-currency support
-- Mobile app with React Native
+### Backend → Render
+1. Push to GitHub
+2. Create new Web Service on Render
+3. Set environment variables (from `.env.example`)
+4. Build: `npm install` | Start: `npm start`
+5. Use Render Redis or Redis Cloud for queue backing
+
+### Frontend → Vercel
+1. Push to GitHub
+2. Import on Vercel
+3. Set `VITE_API_URL` and `VITE_STRIPE_PUBLIC_KEY`
+4. Build: `npm run build` | Output: `dist`
 
 ---
 
-## 🛠️ Tech Stack Summary
+## 🛠️ Tech Stack
 
 | Layer | Technology |
 |-------|------------|
-| Frontend | React 18, Vite, Tailwind CSS |
-| State Management | Redux Toolkit |
-| Routing | React Router v6 |
-| HTTP Client | Axios |
+| Frontend | React 18, Vite, TailwindCSS, Recharts |
+| State | Redux Toolkit |
 | Backend | Node.js, Express.js |
-| Database | MongoDB, Mongoose |
-| Authentication | JWT, bcryptjs |
+| Database | MongoDB Atlas, Mongoose 8 |
+| Auth | JWT, bcryptjs |
 | Payments | Stripe (Test Mode) |
-| Image Upload | Multer + Cloudinary |
-| Notifications | React Toastify |
+| Queues | Bull + Redis |
+| Email | Nodemailer (Gmail SMTP) |
+| Scheduling | node-cron |
+| PDF | PDFKit |
+| Images | Cloudinary + Multer |

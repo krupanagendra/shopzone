@@ -43,6 +43,12 @@ const authSlice = createSlice({
       state.userInfo = null;
     },
     clearError: (state) => { state.error = null; },
+    // ← NEW: used by RegisterPage after OTP verification
+    setCredentials: (state, action) => {
+      state.userInfo = action.payload;
+      state.loading = false;
+      state.error = null;
+    },
   },
   extraReducers: (builder) => {
     [register, login, updateProfile].forEach((thunk) => {
@@ -54,5 +60,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { logout, clearError } = authSlice.actions;
+export const { logout, clearError, setCredentials } = authSlice.actions;
 export default authSlice.reducer;

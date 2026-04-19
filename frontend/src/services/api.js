@@ -41,7 +41,10 @@ export const productAPI = {
   createProduct: (data) => api.post('/products', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
   updateProduct: (id, data) => api.put(`/products/${id}`, data, { headers: { 'Content-Type': 'multipart/form-data' } }),
   deleteProduct: (id) => api.delete(`/products/${id}`),
-  createReview: (id, data) => api.post(`/products/${id}/reviews`, data),
+  createReview: (id, data) => api.post(`/products/${id}/reviews`, data instanceof FormData ? data : data, data instanceof FormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {}),
+  createReviewJSON: (id, data) => api.post(`/products/${id}/reviews`, data),
+  getSimilarProducts: (id) => api.get(`/products/${id}/similar`),
+  getReviewSummary: (id) => api.get(`/products/${id}/review-summary`),
 };
 
 // Cart
@@ -62,9 +65,11 @@ export const orderAPI = {
   updateOrderStatus: (id, data) => api.put(`/orders/${id}/status`, data),
 };
 
-// Payment
+// Payment (Razorpay) — with timeout to prevent indefinite hanging
 export const paymentAPI = {
-  createPaymentIntent: () => api.post('/payment/create-payment-intent'),
+  createOrder: () => api.post('/payment/create-order', {}, { timeout: 20000 }),
+  verifyPayment: (data) => api.post('/payment/verify', data, { timeout: 20000 }),
+  getKey: () => api.get('/payment/key', { timeout: 10000 }),
 };
 
 // Wishlist
@@ -79,6 +84,26 @@ export const adminAPI = {
   getAllUsers: () => api.get('/admin/users'),
   deleteUser: (id) => api.delete(`/admin/users/${id}`),
   updateUserRole: (id, data) => api.put(`/admin/users/${id}/role`, data),
+};
+
+// System Monitoring
+export const systemAPI = {
+  getStatus: () => api.get('/system/status'),
+  getDashboardStats: () => api.get('/system/dashboard-stats'),
+  triggerAgent: (agent) => api.post('/system/trigger-agent', { agent }),
+};
+
+// Admin AI
+export const adminAiAPI = {
+  getLogs: () => api.get('/admin-ai/logs'),
+  queryAI: (data) => api.post('/admin-ai/query', data),
+};
+
+// Suggestions
+export const suggestionAPI = {
+  createSuggestion: (data) => api.post('/suggestions', data),
+  getSuggestions: () => api.get('/suggestions'),
+  updateStatus: (id, data) => api.patch(`/suggestions/${id}`, data),
 };
 
 export default api;

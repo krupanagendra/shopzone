@@ -19,12 +19,7 @@ const orderSchema = new mongoose.Schema(
       postalCode: String,
       country: String,
     },
-    // "online" = Stripe card  |  "cod" = cash on delivery
-    paymentMethod: {
-      type: String,
-      enum: ["online", "cod", "stripe"],
-      default: "online",
-    },
+    paymentMethod: { type: String, default: "razorpay" },
     paymentResult: {
       id: String,
       status: String,
@@ -35,6 +30,7 @@ const orderSchema = new mongoose.Schema(
     shippingPrice: { type: Number, required: true },
     taxPrice: { type: Number, required: true },
     totalPrice: { type: Number, required: true },
+    discountAmount: { type: Number, default: 0 },      // for Prime/coupon discounts
     isPaid: { type: Boolean, default: false },
     paidAt: Date,
     isDelivered: { type: Boolean, default: false },
@@ -44,7 +40,11 @@ const orderSchema = new mongoose.Schema(
       enum: ["pending", "processing", "shipped", "delivered", "cancelled"],
       default: "pending",
     },
-    stripePaymentIntentId: String,
+    razorpayPaymentId: String,
+    razorpayOrderId: String,
+    shippedAt: Date,
+    emailSentShipped: { type: Boolean, default: false }, // prevents duplicate shipped emails
+    emailSentDelivered: { type: Boolean, default: false }, // prevents duplicate delivered emails
   },
   { timestamps: true }
 );

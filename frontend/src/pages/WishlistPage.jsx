@@ -29,7 +29,7 @@ const WishlistPage = () => {
       <h1 className="text-2xl font-bold mb-6 flex items-center gap-2"><FaHeart className="text-red-500" /> My Wishlist ({items.length})</h1>
       {items.length === 0 ? (
         <div className="text-center py-20">
-          <p className="text-6xl mb-4">💝</p>
+          <FaHeart className="text-6xl mb-4 text-red-300" />
           <p className="text-xl mb-4">Your wishlist is empty</p>
           <Link to="/products" className="btn-primary py-3 px-8">Discover Products</Link>
         </div>

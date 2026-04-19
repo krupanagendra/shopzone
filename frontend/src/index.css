@@ -1,30 +1,308 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
+  * {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
   body {
-    @apply bg-gray-50 text-gray-900;
+    @apply bg-gray-50 text-gray-900 transition-all duration-500 ease-in-out;
+  }
+
+  /* ── Dark mode: deep space gradient background ── */
+  .dark body {
+    background: linear-gradient(135deg, #0a0e1a 0%, #0d1320 25%, #111827 50%, #0f1729 75%, #0a0e1a 100%);
+    background-attachment: fixed;
+    color: #e2e8f0;
+  }
+
+  /* Smooth dark mode transition on all elements */
+  .dark * {
+    transition: background-color 0.4s ease, border-color 0.4s ease, color 0.3s ease, box-shadow 0.4s ease;
   }
 }
 
 @layer components {
   .btn-primary {
-    @apply bg-amazon-yellow hover:bg-amazon-orange text-black font-semibold py-2 px-4 rounded transition-colors duration-200;
+    @apply bg-omnikart-accent hover:bg-yellow-500 text-black font-semibold py-2 px-4 rounded-lg transition-all duration-300;
   }
+  .dark .btn-primary {
+    box-shadow: 0 0 12px rgba(255, 184, 77, 0.25), 0 0 30px rgba(255, 184, 77, 0.08);
+  }
+  .dark .btn-primary:hover {
+    box-shadow: 0 0 20px rgba(255, 184, 77, 0.45), 0 0 50px rgba(255, 184, 77, 0.15);
+    transform: translateY(-1px);
+  }
+
   .btn-secondary {
-    @apply bg-amazon-blue hover:bg-amazon-light text-white font-semibold py-2 px-4 rounded transition-colors duration-200;
+    @apply bg-amazon-blue hover:bg-amazon-light text-white font-semibold py-2 px-4 rounded-lg transition-all duration-300;
   }
+  .dark .btn-secondary {
+    @apply bg-slate-800/80 hover:bg-slate-700/90 border border-slate-600/50;
+    backdrop-filter: blur(8px);
+  }
+
   .card {
-    @apply bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-200;
+    @apply bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-all duration-300 border border-gray-100;
   }
+  .dark .card {
+    @apply bg-slate-800/60 border-slate-700/50;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  }
+  .dark .card:hover {
+    @apply border-omnikart-accent/30;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(255, 184, 77, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    transform: translateY(-2px);
+  }
+
   .input-field {
-    @apply w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amazon-yellow focus:border-transparent;
+    @apply w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-omnikart-accent focus:border-transparent transition-all duration-300;
+  }
+  .dark .input-field {
+    @apply border-slate-600/50 bg-slate-800/60 text-white placeholder-slate-400;
+    backdrop-filter: blur(8px);
+  }
+  .dark .input-field:focus {
+    box-shadow: 0 0 0 3px rgba(255, 184, 77, 0.15), 0 0 16px rgba(255, 184, 77, 0.08);
   }
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar { width: 6px; }
+/* ── Dark mode scrollbar ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: #f1f1f1; }
 ::-webkit-scrollbar-thumb { background: #888; border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: #555; }
+
+.dark ::-webkit-scrollbar-track { background: #0a0e1a; }
+.dark ::-webkit-scrollbar-thumb { 
+  background: linear-gradient(180deg, #FFB84D 0%, #f97316 100%); 
+  border-radius: 3px; 
+}
+.dark ::-webkit-scrollbar-thumb:hover { 
+  background: linear-gradient(180deg, #fcd34d 0%, #FFB84D 100%); 
+}
+
+/* ── Dark mode selection highlight ── */
+.dark ::selection {
+  background: rgba(255, 184, 77, 0.3);
+  color: #ffffff;
+}
+
+/* ── Utility: Gradient text ── */
+.gradient-text {
+  background: linear-gradient(135deg, #FFB84D 0%, #f97316 50%, #FFB84D 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradient-x 4s ease infinite;
+}
+
+/* ── Utility: Glass panel ── */
+.dark .glass-panel {
+  background: rgba(17, 24, 39, 0.6);
+  backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* ── Utility: Neon border glow ── */
+.dark .neon-border {
+  border: 1px solid rgba(255, 184, 77, 0.2);
+  box-shadow: 0 0 8px rgba(255, 184, 77, 0.1), inset 0 0 8px rgba(255, 184, 77, 0.03);
+}
+.dark .neon-border:hover {
+  border-color: rgba(255, 184, 77, 0.4);
+  box-shadow: 0 0 16px rgba(255, 184, 77, 0.2), inset 0 0 16px rgba(255, 184, 77, 0.05);
+}
+
+/* ── Gradient keyframes ── */
+@keyframes gradient-x {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   GLOBAL DARK MODE OVERRIDES — Catches all pages automatically
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Page containers & cards ── */
+.dark .bg-white {
+  background-color: rgba(30, 41, 59, 0.7) !important;
+  backdrop-filter: blur(12px);
+}
+.dark .bg-gray-50,
+.dark .bg-gray-100 {
+  background-color: rgba(15, 23, 42, 0.6) !important;
+}
+.dark .min-h-screen.bg-gray-50 {
+  background: linear-gradient(135deg, #0a0e1a 0%, #0d1320 25%, #111827 50%, #0f1729 75%, #0a0e1a 100%) !important;
+  background-attachment: fixed !important;
+}
+
+/* ── Text colors ── */
+.dark .text-gray-900,
+.dark .text-gray-800 {
+  color: #f1f5f9 !important;
+}
+.dark .text-gray-700 {
+  color: #cbd5e1 !important;
+}
+.dark .text-gray-600 {
+  color: #94a3b8 !important;
+}
+.dark .text-gray-500 {
+  color: #64748b !important;
+}
+.dark .text-gray-400 {
+  color: #475569 !important;
+}
+
+/* ── Borders ── */
+.dark .border-gray-100,
+.dark .border-gray-200,
+.dark .border-gray-300 {
+  border-color: rgba(71, 85, 105, 0.5) !important;
+}
+.dark .border-b.border-gray-100,
+.dark .border-b.border-gray-200 {
+  border-color: rgba(71, 85, 105, 0.4) !important;
+}
+.dark hr {
+  border-color: rgba(71, 85, 105, 0.4) !important;
+}
+
+/* ── Shadows ── */
+.dark .shadow,
+.dark .shadow-sm,
+.dark .shadow-md,
+.dark .shadow-lg,
+.dark .shadow-xl,
+.dark .shadow-2xl {
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.03) !important;
+}
+
+/* ── Form inputs (non input-field styled) ── */
+.dark input[type="text"],
+.dark input[type="email"],
+.dark input[type="number"],
+.dark input[type="url"],
+.dark input[type="password"],
+.dark input[type="tel"],
+.dark textarea,
+.dark select {
+  background-color: rgba(30, 41, 59, 0.8) !important;
+  border-color: rgba(71, 85, 105, 0.5) !important;
+  color: #e2e8f0 !important;
+}
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #64748b !important;
+}
+.dark select option {
+  background-color: #1e293b !important;
+  color: #e2e8f0 !important;
+}
+.dark input:focus,
+.dark textarea:focus,
+.dark select:focus {
+  box-shadow: 0 0 0 3px rgba(255, 184, 77, 0.15) !important;
+}
+
+/* ── Specific component overrides ── */
+.dark .bg-amber-50 {
+  background-color: rgba(255, 184, 77, 0.08) !important;
+}
+.dark .bg-amber-50 .text-amber-800 {
+  color: #fbbf24 !important;
+}
+.dark .border-amber-100,
+.dark .border-amber-200 {
+  border-color: rgba(255, 184, 77, 0.2) !important;
+}
+
+.dark .bg-blue-50 {
+  background-color: rgba(59, 130, 246, 0.1) !important;
+}
+.dark .bg-green-50 {
+  background-color: rgba(34, 197, 94, 0.1) !important;
+}
+.dark .bg-red-50 {
+  background-color: rgba(239, 68, 68, 0.1) !important;
+}
+
+/* ── Amazon blue header in dark mode (Suggest Product etc.) ── */
+.dark .bg-amazon-blue {
+  background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%) !important;
+}
+
+/* ── Review cards and sub-cards ── */
+.dark .bg-gray-50.p-4,
+.dark .bg-gray-50.rounded-xl {
+  background-color: rgba(15, 23, 42, 0.5) !important;
+  border-color: rgba(71, 85, 105, 0.3) !important;
+}
+
+/* ── Gradient text backgrounds ── */
+.dark .bg-gradient-to-r.from-blue-50 {
+  background: linear-gradient(to right, rgba(59, 130, 246, 0.08), rgba(99, 102, 241, 0.08)) !important;
+}
+
+/* ── Status badges — keep them bright ── */
+.dark .bg-yellow-100 { background-color: rgba(250, 204, 21, 0.15) !important; }
+.dark .bg-blue-100 { background-color: rgba(59, 130, 246, 0.15) !important; }
+.dark .bg-green-100 { background-color: rgba(34, 197, 94, 0.15) !important; }
+.dark .bg-red-100 { background-color: rgba(239, 68, 68, 0.15) !important; }
+.dark .bg-purple-100 { background-color: rgba(168, 85, 247, 0.15) !important; }
+
+/* ── Checkout step indicator ── */
+.dark .bg-gray-200 {
+  background-color: rgba(51, 65, 85, 0.6) !important;
+}
+.dark .text-gray-500.bg-gray-200 {
+  color: #94a3b8 !important;
+}
+
+/* ── Breadcrumbs ── */
+.dark .hover\:text-amazon-blue:hover {
+  color: #FFB84D !important;
+}
+
+/* ── Dashed borders (upload, coupons) ── */
+.dark .border-dashed {
+  border-color: rgba(71, 85, 105, 0.5) !important;
+}
+
+/* ── Links inside dark mode ── */
+.dark a.text-amazon-blue {
+  color: #FFB84D !important;
+}
+
+/* ── Product card text on dark bg ── */
+.dark .font-bold.text-gray-800,
+.dark .font-bold.text-gray-900,
+.dark .font-black.text-gray-900,
+.dark .font-black.text-gray-800,
+.dark .font-semibold.text-gray-800 {
+  color: #f1f5f9 !important;
+}
+
+/* ── Price text ── */
+.dark .text-3xl.font-black.text-gray-900,
+.dark .font-bold.text-lg.text-gray-900 {
+  color: #ffffff !important;
+}
+
+/* ── Keep accent-colored text visible ── */
+.dark .text-amazon-blue {
+  color: #60a5fa !important;
+}
+
+/* ── Disabled button in dark ── */
+.dark .bg-gray-400.cursor-not-allowed {
+  background-color: rgba(71, 85, 105, 0.6) !important;
+  color: #94a3b8 !important;
+}

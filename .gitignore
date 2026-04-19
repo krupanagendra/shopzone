@@ -51,3 +51,16 @@ desktop.ini
 # ── Misc ──────────────────────────────────
 *.zip
 .cache/
+
+
+# ── Test files (EXCLUDED from production) ─
+backend/tests/
+frontend/src/tests/
+backend/jest.config.js
+frontend/src/setupTests.js
+**/*.test.js
+**/*.test.jsx
+**/*.spec.js
+**/*.spec.jsx
+backend/test-email.js
+backend/test-scenarios.js

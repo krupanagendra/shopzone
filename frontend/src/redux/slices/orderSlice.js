@@ -3,7 +3,7 @@ import API from '../../services/api'
 
 export const createOrder = createAsyncThunk('orders/createOrder', async (orderData, { rejectWithValue }) => {
   try {
-    const res = await API.post('/api/orders', orderData)
+    const res = await API.post('/orders', orderData)
     return res.data
   } catch (err) {
     return rejectWithValue(err.response?.data?.message || 'Failed to create order')
@@ -12,7 +12,7 @@ export const createOrder = createAsyncThunk('orders/createOrder', async (orderDa
 
 export const fetchMyOrders = createAsyncThunk('orders/fetchMyOrders', async (_, { rejectWithValue }) => {
   try {
-    const res = await API.get('/api/orders/myorders')
+    const res = await API.get('/orders/mine')
     return res.data
   } catch (err) {
     return rejectWithValue(err.response?.data?.message)
@@ -21,7 +21,7 @@ export const fetchMyOrders = createAsyncThunk('orders/fetchMyOrders', async (_, 
 
 export const fetchOrderById = createAsyncThunk('orders/fetchOrderById', async (id, { rejectWithValue }) => {
   try {
-    const res = await API.get(`/api/orders/${id}`)
+    const res = await API.get(`/orders/${id}`)
     return res.data
   } catch (err) {
     return rejectWithValue(err.response?.data?.message)
@@ -30,7 +30,7 @@ export const fetchOrderById = createAsyncThunk('orders/fetchOrderById', async (i
 
 export const fetchAllOrders = createAsyncThunk('orders/fetchAllOrders', async (params, { rejectWithValue }) => {
   try {
-    const res = await API.get('/api/orders', { params })
+    const res = await API.get('/orders', { params })
     return res.data
   } catch (err) {
     return rejectWithValue(err.response?.data?.message)
@@ -39,7 +39,7 @@ export const fetchAllOrders = createAsyncThunk('orders/fetchAllOrders', async (p
 
 export const updateOrderStatus = createAsyncThunk('orders/updateOrderStatus', async ({ id, status }, { rejectWithValue }) => {
   try {
-    const res = await API.put(`/api/orders/${id}/status`, { status })
+    const res = await API.put(`/orders/${id}/status`, { status })
     return res.data
   } catch (err) {
     return rejectWithValue(err.response?.data?.message)
@@ -73,7 +73,10 @@ const orderSlice = createSlice({
       .addCase(fetchOrderById.fulfilled, (state, action) => { state.loading = false; state.order = action.payload })
       .addCase(fetchOrderById.rejected, (state, action) => { state.loading = false; state.error = action.payload })
       .addCase(fetchAllOrders.pending, (state) => { state.loading = true })
-      .addCase(fetchAllOrders.fulfilled, (state, action) => { state.loading = false; state.adminOrders = action.payload.orders })
+      .addCase(fetchAllOrders.fulfilled, (state, action) => {
+        state.loading = false;
+        state.adminOrders = Array.isArray(action.payload) ? action.payload : (action.payload.orders || [])
+      })
       .addCase(fetchAllOrders.rejected, (state, action) => { state.loading = false; state.error = action.payload })
       .addCase(updateOrderStatus.fulfilled, (state, action) => {
         const idx = state.adminOrders.findIndex(o => o._id === action.payload._id)

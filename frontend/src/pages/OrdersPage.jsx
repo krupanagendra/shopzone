@@ -12,46 +12,61 @@ const STATUS_COLORS = {
   cancelled: "bg-red-100 text-red-700",
 };
 
+// INR formatter
+const fmt = (n) => `₹${Math.round(n || 0).toLocaleString("en-IN")}`;
+
 const OrdersPage = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    orderAPI.getMyOrders().then((res) => { setOrders(res.data); setLoading(false); }).catch(() => setLoading(false));
+    orderAPI.getMyOrders()
+      .then((res) => { setOrders(res.data); setLoading(false); })
+      .catch(() => setLoading(false));
   }, []);
 
   if (loading) return <Spinner />;
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-6">
-      <h1 className="text-2xl font-bold mb-6 flex items-center gap-2"><FaBox /> My Orders</h1>
+      <h1 className="text-2xl font-bold mb-6 flex items-center gap-2">
+        <FaBox /> My Orders
+      </h1>
+
       {orders.length === 0 ? (
         <div className="text-center py-20">
-          <p className="text-6xl mb-4">📦</p>
-          <p className="text-xl mb-4">No orders yet</p>
+          <FaBox className="text-6xl mb-4 text-gray-300" />
+          <p className="text-xl mb-4 text-gray-600">No orders yet</p>
           <Link to="/products" className="btn-primary py-3 px-8">Start Shopping</Link>
         </div>
       ) : (
         <div className="space-y-4">
           {orders.map((order) => (
-            <Link key={order._id} to={`/order/${order._id}`} className="block bg-white rounded-xl shadow hover:shadow-md transition-shadow p-5">
+            <Link key={order._id} to={`/order/${order._id}`}
+              className="block bg-white rounded-xl shadow hover:shadow-md transition-shadow p-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <p className="text-sm text-gray-500">Order #{order._id.slice(-8).toUpperCase()}</p>
-                  <p className="text-sm text-gray-400">{new Date(order.createdAt).toLocaleDateString()}</p>
+                  <p className="font-semibold text-gray-800">Order #{order._id.slice(-8).toUpperCase()}</p>
+                  <p className="text-sm text-gray-400">{new Date(order.createdAt).toLocaleDateString("en-IN")}</p>
                 </div>
-                <span className={`text-xs font-semibold px-3 py-1 rounded-full capitalize ${STATUS_COLORS[order.status] || "bg-gray-100"}`}>{order.status}</span>
+                <span className={`text-xs font-semibold px-3 py-1 rounded-full capitalize ${STATUS_COLORS[order.status] || "bg-gray-100"}`}>
+                  {order.status}
+                </span>
                 <div className="text-right">
-                  <p className="font-bold text-lg">${order.totalPrice.toFixed(2)}</p>
+                  <p className="font-bold text-lg text-gray-900">{fmt(order.totalPrice)}</p>
                   <p className="text-sm text-gray-500">{order.items.length} item{order.items.length !== 1 ? "s" : ""}</p>
                 </div>
               </div>
               <div className="flex gap-2 mt-3 overflow-x-auto">
                 {order.items.slice(0, 4).map((item, i) => (
-                  <img key={i} src={item.image} alt={item.name} className="w-12 h-12 object-cover rounded"
-                    onError={(e)=>{e.target.src="https://via.placeholder.com/50"}} />
+                  <img key={i} src={item.image} alt={item.name} className="w-12 h-12 object-cover rounded-lg flex-shrink-0"
+                    onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/48x48/131921/febd69?text=?"; }} />
                 ))}
-                {order.items.length > 4 && <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center text-sm text-gray-500">+{order.items.length - 4}</div>}
+                {order.items.length > 4 && (
+                  <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center text-sm text-gray-500 flex-shrink-0">
+                    +{order.items.length - 4}
+                  </div>
+                )}
               </div>
             </Link>
           ))}

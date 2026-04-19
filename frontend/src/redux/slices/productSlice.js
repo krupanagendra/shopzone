@@ -37,6 +37,7 @@ const productSlice = createSlice({
     page: 1,
     pages: 1,
     total: 0,
+    suggestion: null,
     loading: false,
     error: null,
   },
@@ -50,6 +51,7 @@ const productSlice = createSlice({
         state.page = action.payload.page;
         state.pages = action.payload.pages;
         state.total = action.payload.total;
+        state.suggestion = action.payload.suggestion;
       })
       .addCase(fetchProducts.rejected, (state, action) => { state.loading = false; state.error = action.payload; })
       .addCase(fetchCategories.fulfilled, (state, action) => { state.categories = action.payload; })

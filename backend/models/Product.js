@@ -6,6 +6,7 @@ const reviewSchema = new mongoose.Schema(
     name: { type: String, required: true },
     rating: { type: Number, required: true, min: 1, max: 5 },
     comment: { type: String, required: true },
+    photos: [{ type: String }],          // Cloudinary URLs for review photos
   },
   { timestamps: true }
 );
@@ -23,10 +24,17 @@ const productSchema = new mongoose.Schema(
     countInStock: { type: Number, required: true, default: 0 },
     reviews: [reviewSchema],
     isFeatured: { type: Boolean, default: false },
+    // AI Agent fields
+    salesLast7Days: { type: Number, default: 0 },
+    minPrice: { type: Number },
+    maxPrice: { type: Number },
+    lastUpdated: { type: Date },
+    offer: { type: String, default: "" },
   },
   { timestamps: true }
 );
 
 productSchema.index({ name: "text", description: "text", brand: "text" });
+productSchema.index({ salesLast7Days: -1 });
 
 module.exports = mongoose.model("Product", productSchema);

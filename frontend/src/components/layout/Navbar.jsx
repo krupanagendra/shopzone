@@ -5,24 +5,28 @@ import { logout } from '../../redux/slices/authSlice';
 import {
   FaShoppingCart, FaHeart, FaBars, FaTimes,
   FaSearch, FaUser, FaChevronDown, FaHome,
-  FaArrowLeft, FaTh
+  FaArrowLeft, FaTh, FaHeadphones, FaMoon, FaSun,
+  FaMobileAlt, FaLaptop, FaTshirt, FaBook, FaGamepad, FaDumbbell, FaCamera, FaBoxOpen, FaCrown, FaMusic, FaGift, FaCog, FaSignOutAlt, FaLightbulb, FaBox, FaShoppingBag
 } from 'react-icons/fa';
+import PrimeBadge from '../common/PrimeBadge';
+import BrandLogo from '../common/BrandLogo';
+import { useTheme } from '../../context/ThemeContext';
 
 const ALL_CATEGORIES = [
-  { label: "Electronics", emoji: "📱", short: "Electronics", icon: "🔌" },
-  { label: "Computers", emoji: "💻", short: "Computers", icon: "🖥️" },
-  { label: "Clothing", emoji: "👟", short: "Clothing", icon: "👗" },
-  { label: "Home & Kitchen", emoji: "🏠", short: "Home", icon: "🍳" },
-  { label: "Books", emoji: "📚", short: "Books", icon: "📖" },
-  { label: "Gaming", emoji: "🎮", short: "Gaming", icon: "🕹️" },
-  { label: "Sports", emoji: "🚴", short: "Sports", icon: "⚽" },
-  { label: "Cameras", emoji: "📷", short: "Cameras", icon: "🎥" },
-  { label: "Beauty", emoji: "🧴", short: "Beauty", icon: "💄" },
-  { label: "Health", emoji: "🌱", short: "Health", icon: "💊" },
-  { label: "Toys", emoji: "🧸", short: "Toys", icon: "🎯" },
-  { label: "Music", emoji: "🎵", short: "Music", icon: "🎸" },
-  { label: "Automotive", emoji: "🚗", short: "Auto", icon: "🔧" },
-  { label: "Pet Supplies", emoji: "🐾", short: "Pets", icon: "🐶" },
+  { label: "Electronics", Icon: FaMobileAlt, short: "Electronics" },
+  { label: "Computers", Icon: FaLaptop, short: "Computers" },
+  { label: "Clothing", Icon: FaTshirt, short: "Clothing" },
+  { label: "Home & Kitchen", Icon: FaHome, short: "Home" },
+  { label: "Books", Icon: FaBook, short: "Books" },
+  { label: "Gaming", Icon: FaGamepad, short: "Gaming" },
+  { label: "Sports", Icon: FaDumbbell, short: "Sports" },
+  { label: "Cameras", Icon: FaCamera, short: "Cameras" },
+  { label: "Beauty", Icon: FaHeart, short: "Beauty" },
+  { label: "Health", Icon: FaHeart, short: "Health" },
+  { label: "Toys", Icon: FaGamepad, short: "Toys" },
+  { label: "Music", Icon: FaMusic, short: "Music" },
+  { label: "Automotive", Icon: FaBoxOpen, short: "Auto" },
+  { label: "Pet Supplies", Icon: FaHeart, short: "Pets" },
 ];
 
 // Duplicated for seamless infinite scroll
@@ -35,10 +39,13 @@ const Navbar = () => {
   const [catDropdown, setCatDropdown] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   const dropdownRef = useRef(null);
   const catRef = useRef(null);
   const scrollRef = useRef(null);
+  const searchTimeoutRef = useRef(null);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -48,6 +55,7 @@ const Navbar = () => {
   const { cart } = useSelector((s) => s.cart);
   const cartCount = cart?.items?.reduce((acc, i) => acc + i.quantity, 0) || 0;
   const isHome = location.pathname === '/';
+  const { theme, toggleTheme } = useTheme();
 
   // Navbar shadow on scroll
   useEffect(() => {
@@ -69,6 +77,28 @@ const Navbar = () => {
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) navigate(`/products?keyword=${searchQuery}`);
+  };
+
+  // ── Auto-suggestions ───────────────────────────────────────────────────────────
+  const fetchSuggestions = async (query) => {
+    if (!query.trim()) { setSuggestions([]); return; }
+    try {
+      const resp = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/products/search/suggestions?keyword=${query}`);
+      const data = await resp.json();
+      setSuggestions(data);
+    } catch (err) {
+      console.error("Failed to fetch suggestions");
+    }
+  };
+
+  const handleSearchChange = (e) => {
+    const val = e.target.value;
+    setSearchQuery(val);
+    setShowSuggestions(true);
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    searchTimeoutRef.current = setTimeout(() => {
+      fetchSuggestions(val);
+    }, 300);
   };
 
   const handleLogout = () => {
@@ -103,12 +133,12 @@ const Navbar = () => {
         }
       `}</style>
 
-      <nav className={`bg-amazon sticky top-0 z-50 transition-shadow duration-300 ${scrolled ? 'shadow-2xl' : 'shadow-lg'}`}>
+      <nav className={`bg-amazon dark:bg-omnikart-dark dark:border-b dark:border-slate-800 sticky top-0 z-50 transition-all duration-300 ${scrolled ? 'shadow-2xl' : 'shadow-lg'}`}>
 
         {/* ══ Main Bar ══ */}
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
 
-          {/* Back + Home */}
+          {/* Back */}
           <div className="flex items-center gap-1 flex-shrink-0">
             {!isHome && (
               <button
@@ -120,35 +150,60 @@ const Navbar = () => {
                 <span className="hidden sm:inline">Back</span>
               </button>
             )}
-            <Link to="/" title="Home" className="text-white hover:text-amazon-yellow ml-1 transition-transform hover:scale-110">
-              <FaHome className="text-xl" />
-            </Link>
           </div>
 
           {/* Logo */}
-          <Link to="/" className="text-white text-2xl font-black flex-shrink-0 tracking-tight hover:opacity-90 transition-opacity">
-            <span className="text-amazon-yellow">Shop</span>Zone
+          <Link to="/" className="flex items-center gap-2 flex-shrink-0 hover:opacity-90 transition-opacity">
+            <BrandLogo className="h-10 md:h-12" />
           </Link>
 
           {/* Search */}
-          <form onSubmit={handleSearch} className="flex-1 flex max-w-2xl group">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search products, brands, categories..."
-              className="flex-1 px-4 py-2 rounded-l-md text-black focus:outline-none text-sm ring-0 focus:ring-2 focus:ring-amazon-yellow"
-            />
-            <button
-              type="submit"
-              className="bg-amazon-yellow hover:bg-amazon-orange px-4 py-2 rounded-r-md transition-colors"
-            >
+          <form onSubmit={handleSearch} className="flex-1 flex max-w-2xl relative">
+            <div className="flex-1 flex relative">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={handleSearchChange}
+                onFocus={() => setShowSuggestions(true)}
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                placeholder="Search products, brands, categories..."
+                className="flex-1 px-4 py-2 text-black focus:outline-none text-sm focus:ring-2 focus:ring-amazon-yellow bg-white rounded-l-md"
+              />
+            </div>
+            <button type="submit" className="bg-amazon-yellow hover:bg-amazon-orange px-4 py-2 rounded-r-md transition-colors">
               <FaSearch className="text-black" />
             </button>
+            
+            {/* Auto-suggestions Dropdown */}
+            {showSuggestions && suggestions.length > 0 && (
+              <ul className="absolute top-full left-0 w-full bg-white rounded-b-lg shadow-2xl border border-gray-100 z-50 overflow-hidden mt-1 animate-in fade-in slide-in-from-top-2 duration-200">
+                {suggestions.map((s) => (
+                  <li key={s._id}>
+                    <button type="button" onMouseDown={() => { setSearchQuery(s.name); navigate(`/product/${s._id}`); }}
+                      className="w-full text-left px-4 py-3 hover:bg-amber-50 focus:bg-amber-50 text-sm text-gray-800 transition-colors flex items-center gap-3 border-b border-gray-50 last:border-0">
+                      <FaSearch className="text-gray-300 text-xs flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold truncate text-gray-900">{s.name}</p>
+                        <p className="text-xs text-gray-500 truncate">{s.brand} • {s.category}</p>
+                      </div>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </form>
 
           {/* Desktop icons */}
           <div className="hidden md:flex items-center gap-4 text-white">
+
+            {/* Theme Toggle */}
+            <button 
+              onClick={toggleTheme} 
+              className="p-2 rounded-full hover:bg-white hover:bg-opacity-10 transition-colors text-lg"
+              title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+            >
+              {theme === 'light' ? <FaMoon /> : <FaSun />}
+            </button>
 
             {/* All Categories dropdown */}
             <div className="relative" ref={catRef}>
@@ -173,7 +228,7 @@ const Navbar = () => {
                         onClick={() => setCatDropdown(false)}
                         className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-amber-50 hover:text-amazon-blue text-sm transition-colors"
                       >
-                        <span className="text-lg w-6 text-center">{cat.emoji}</span>
+                        <span className="text-lg w-6 text-center flex justify-center"><cat.Icon /></span>
                         <span className="font-medium">{cat.label}</span>
                       </Link>
                     ))}
@@ -184,12 +239,18 @@ const Navbar = () => {
                       onClick={() => setCatDropdown(false)}
                       className="flex items-center gap-3 px-4 py-2 text-amazon-blue font-bold hover:bg-amber-50 text-sm"
                     >
-                      🛍️ View All Products
+                      <FaShoppingBag className="text-lg" /> View All Products
                     </Link>
                   </div>
                 </div>
               )}
             </div>
+
+            {/* Suggest Product */}
+            <Link to="/suggest-product" className="hover:text-amazon-yellow text-sm transition-colors flex items-center gap-1 group">
+              <span className="text-base group-hover:scale-125 transition-transform duration-200"><FaLightbulb /></span>
+              <span className="hidden lg:inline">Suggest Product</span>
+            </Link>
 
             {/* User */}
             {userInfo ? (
@@ -204,14 +265,20 @@ const Navbar = () => {
                 </button>
                 {userDropdown && (
                   <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-2xl py-1 z-50 border border-gray-100">
-                    <Link to="/profile" className="block px-4 py-2 text-gray-700 hover:bg-gray-50 text-sm" onClick={() => setUserDropdown(false)}>👤 My Profile</Link>
-                    <Link to="/orders" className="block px-4 py-2 text-gray-700 hover:bg-gray-50 text-sm" onClick={() => setUserDropdown(false)}>📦 My Orders</Link>
-                    <Link to="/wishlist" className="block px-4 py-2 text-gray-700 hover:bg-gray-50 text-sm" onClick={() => setUserDropdown(false)}>❤️ Wishlist</Link>
+                    <Link to="/profile" className="block px-4 py-2 text-gray-700 hover:bg-gray-50 text-sm flex items-center gap-2" onClick={() => setUserDropdown(false)}><FaUser /> My Profile</Link>
+                    <Link to="/orders" className="block px-4 py-2 text-gray-700 hover:bg-gray-50 text-sm flex items-center gap-2" onClick={() => setUserDropdown(false)}><FaBox /> My Orders</Link>
+                    <Link to="/wishlist" className="block px-4 py-2 text-gray-700 hover:bg-gray-50 text-sm flex items-center gap-2" onClick={() => setUserDropdown(false)}><FaHeart className="text-red-500" /> Wishlist</Link>
+                    <Link to="/prime" className="block px-4 py-2 text-amber-600 hover:bg-amber-50 text-sm font-semibold flex items-center gap-2" onClick={() => setUserDropdown(false)}><FaCrown /> Prime Membership</Link>
+                    <Link to="/music" className="block px-4 py-2 text-blue-600 hover:bg-blue-50 text-sm font-semibold flex items-center gap-2" onClick={() => setUserDropdown(false)}><FaMusic /> Prime Music</Link>
+                    <Link to="/rewards" className="block px-4 py-2 text-green-600 hover:bg-green-50 text-sm font-semibold flex items-center gap-2" onClick={() => setUserDropdown(false)}><FaGift /> Rewards & Scratch</Link>
                     {userInfo.role === 'admin' && (
-                      <Link to="/admin" className="block px-4 py-2 text-orange-600 hover:bg-gray-50 text-sm font-semibold" onClick={() => setUserDropdown(false)}>⚙️ Admin Panel</Link>
+                      <>
+                        <Link to="/admin" className="block px-4 py-2 text-orange-600 hover:bg-gray-50 text-sm font-semibold flex items-center gap-2" onClick={() => setUserDropdown(false)}><FaCog /> Admin Panel</Link>
+                        <Link to="/admin/suggestions" className="block px-4 py-2 text-indigo-600 hover:bg-indigo-50 text-sm font-semibold flex items-center gap-2" onClick={() => setUserDropdown(false)}><FaLightbulb /> Manage Suggestions</Link>
+                      </>
                     )}
                     <hr className="my-1" />
-                    <button onClick={handleLogout} className="block w-full text-left px-4 py-2 text-red-600 hover:bg-gray-50 text-sm">🚪 Logout</button>
+                    <button onClick={handleLogout} className="block w-full text-left px-4 py-2 text-red-600 hover:bg-gray-50 text-sm flex items-center gap-2"><FaSignOutAlt /> Logout</button>
                   </div>
                 )}
               </div>
@@ -220,6 +287,12 @@ const Navbar = () => {
                 <FaUser /><span>Sign In</span>
               </Link>
             )}
+
+            <PrimeBadge />
+
+            <Link to="/music" className="hover:text-amazon-yellow transition-all hover:scale-110 relative flex items-center gap-1" title="Prime Music">
+              <FaHeadphones className="text-xl" />
+            </Link>
 
             <Link to="/wishlist" className="hover:text-amazon-yellow transition-all hover:scale-110 relative">
               <FaHeart className="text-xl" />
@@ -260,7 +333,7 @@ const Navbar = () => {
                   transition-colors group border-r border-white border-opacity-10"
               >
                 <span className="text-base group-hover:scale-125 transition-transform duration-200 inline-block">
-                  {cat.emoji}
+                  <cat.Icon />
                 </span>
                 <span className="font-medium tracking-wide">{cat.short}</span>
               </Link>
@@ -274,21 +347,27 @@ const Navbar = () => {
             {userInfo ? (
               <>
                 <span className="text-amazon-yellow font-semibold block">Hi, {userInfo.name} 👋</span>
-                <Link to="/profile" className="block hover:text-amazon-yellow py-1" onClick={() => setMenuOpen(false)}>👤 Profile</Link>
-                <Link to="/orders" className="block hover:text-amazon-yellow py-1" onClick={() => setMenuOpen(false)}>📦 Orders</Link>
+                <Link to="/profile" className="flex items-center gap-2 hover:text-amazon-yellow py-1" onClick={() => setMenuOpen(false)}><FaUser /> Profile</Link>
+                <Link to="/orders" className="flex items-center gap-2 hover:text-amazon-yellow py-1" onClick={() => setMenuOpen(false)}><FaBox /> Orders</Link>
+                <Link to="/prime" className="flex items-center gap-2 text-amber-400 hover:text-amazon-yellow py-1 font-semibold" onClick={() => setMenuOpen(false)}><FaCrown /> Prime Membership</Link>
+                <Link to="/music" className="flex items-center gap-2 text-blue-400 hover:text-amazon-yellow py-1 font-semibold" onClick={() => setMenuOpen(false)}><FaMusic /> Prime Music</Link>
+                <Link to="/rewards" className="flex items-center gap-2 text-green-400 hover:text-amazon-yellow py-1 font-semibold" onClick={() => setMenuOpen(false)}><FaGift /> Rewards & Scratch</Link>
                 {userInfo.role === 'admin' && (
-                  <Link to="/admin" className="block text-orange-400 py-1" onClick={() => setMenuOpen(false)}>⚙️ Admin Panel</Link>
+                  <Link to="/admin" className="flex items-center gap-2 text-orange-400 py-1" onClick={() => setMenuOpen(false)}><FaCog /> Admin Panel</Link>
                 )}
-                <button onClick={() => { handleLogout(); setMenuOpen(false); }} className="block text-red-400 py-1">🚪 Logout</button>
+                <button onClick={() => { handleLogout(); setMenuOpen(false); }} className="flex items-center gap-2 text-red-400 py-1"><FaSignOutAlt /> Logout</button>
               </>
             ) : (
-              <Link to="/login" className="block hover:text-amazon-yellow py-1" onClick={() => setMenuOpen(false)}>👤 Sign In</Link>
+              <Link to="/login" className="flex items-center gap-2 hover:text-amazon-yellow py-1" onClick={() => setMenuOpen(false)}><FaUser /> Sign In</Link>
             )}
             <Link to="/cart" className="flex items-center gap-2 hover:text-amazon-yellow py-1" onClick={() => setMenuOpen(false)}>
               <FaShoppingCart /> Cart {cartCount > 0 && `(${cartCount})`}
             </Link>
             <Link to="/wishlist" className="flex items-center gap-2 hover:text-amazon-yellow py-1" onClick={() => setMenuOpen(false)}>
               <FaHeart /> Wishlist
+            </Link>
+            <Link to="/suggest-product" className="flex items-center gap-2 hover:text-amazon-yellow py-1" onClick={() => setMenuOpen(false)}>
+              <FaLightbulb /> Suggest Product
             </Link>
             <hr className="border-gray-600" />
             <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Categories</p>
@@ -300,7 +379,7 @@ const Navbar = () => {
                   onClick={() => setMenuOpen(false)}
                   className="flex items-center gap-2 text-sm hover:text-amazon-yellow py-1.5"
                 >
-                  <span>{cat.emoji}</span><span>{cat.short}</span>
+                  <span className="flex items-center justify-center w-5"><cat.Icon /></span><span>{cat.short}</span>
                 </Link>
               ))}
             </div>

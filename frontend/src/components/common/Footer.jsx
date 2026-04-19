@@ -46,8 +46,8 @@ const Footer = () => {
           </div>
         </div>
         <div className="border-t border-gray-700 mt-8 pt-8 text-center text-sm text-gray-500">
-          <p>© {new Date().getFullYear()} ShopNow. Built with MERN Stack. Stripe Test Mode.</p>
-          <p className="mt-1">Test Card: 4242 4242 4242 4242 | Any future date | Any CVC</p>
+          <p>© {new Date().getFullYear()} ShopNow. Built with MERN Stack. Razorpay Test Mode.</p>
+          <p className="mt-1">Test UPI: success@razorpay | Test Card: 4111 1111 1111 1111</p>
         </div>
       </div>
     </footer>
