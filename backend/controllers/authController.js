@@ -91,6 +91,13 @@ exports.sendOTP = async (req, res) => {
       return res.status(400).json({ message: "Please enter a valid email address" });
     }
 
+    // Block common typos
+    const domain = email.split('@')[1]?.toLowerCase();
+    const invalidDomains = ['gamil.com', 'gmal.com', 'gmail.co', 'yaho.com', 'yahooo.com', 'ymail.com'];
+    if (invalidDomains.includes(domain)) {
+      return res.status(400).json({ message: `Did you mean ${domain.replace(/gamil|gmal|gmail\.co/, 'gmail').replace(/yaho|yahooo/, 'yahoo')}? Please correct your email domain.` });
+    }
+
     // Check if user already exists
     const exists = await User.findOne({ email: email.toLowerCase() });
     if (exists) return res.status(400).json({ message: "An account with this email already exists. Please sign in." });

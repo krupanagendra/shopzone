@@ -74,12 +74,12 @@ allQueues.forEach((q, i) => {
     console.warn(`[QUEUE WARN] ${name}: ${err.message}`);
   });
 
-  q.on("ready", () => {
+  q.isReady().then(() => {
     if (!redisConnected) {
       console.log("[QUEUE] ✅ Redis connected — All queues operational.");
     }
     redisConnected = true;
-  });
+  }).catch(() => {});
 });
 
 // ─── One-time startup probe ────────────────────────────────────────────

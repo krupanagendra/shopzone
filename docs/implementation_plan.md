@@ -1,4 +1,4 @@
-# ShopZone AI — Production Polish & Demo Prep Implementation Plan
+# OmniKart AI — Production Polish & Demo Prep Implementation Plan
 
 ## Overview
 Complete, test, polish, and prepare the existing MERN-based autonomous AI multi-agent e-commerce system for production demo and interview presentation.
@@ -12,7 +12,7 @@ Complete, test, polish, and prepare the existing MERN-based autonomous AI multi-
 5. **scheduler.js**: No jobId — duplicate jobs on server restart.
 6. **dashboard-stats**: Uses random mock chart data, not real MongoDB data.
 7. **adminController.js**: Fetches all paid orders into memory to compute revenue (should use aggregation).
-8. **email.js**: Sender name is "Autonomous System" instead of "ShopZone AI".
+8. **email.js**: Sender name is "Autonomous System" instead of "OmniKart AI".
 9. **db.js**: Uses deprecated Mongoose 8 options.
 
 ## 9-Phase Plan
@@ -33,7 +33,7 @@ Complete, test, polish, and prepare the existing MERN-based autonomous AI multi-
 ### Phase 3: Email Template Enhancement
 - Add order confirmation email template
 - Add pricing report and daily report templates
-- Update sender branding to "ShopZone AI"
+- Update sender branding to "OmniKart AI"
 
 ### Phase 4: Frontend Admin Dashboard
 - Replace alert() with inline AI response card

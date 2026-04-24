@@ -1,5 +1,5 @@
 # ──────────────────────────────────────────
-#  ShopZone — Root .gitignore
+#  OmniKart — Root .gitignore
 #  Place this file inside: ecommerce/
 # ──────────────────────────────────────────
 
@@ -64,3 +64,4 @@ frontend/src/setupTests.js
 **/*.spec.jsx
 backend/test-email.js
 backend/test-scenarios.js
+backend/scripts/

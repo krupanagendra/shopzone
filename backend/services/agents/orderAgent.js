@@ -39,7 +39,7 @@ orderQueue.process(async (job) => {
             emailQueue.add({
               type: "order-shipped",
               to: order.user.email,
-              subject: "📦 Your ShopZone Order has Shipped!",
+              subject: "📦 Your OmniKart Order has Shipped!",
               order: { _id: order._id, items: order.items, totalPrice: order.totalPrice, user: { name: order.user.name } }
             });
             order.emailSentShipped = true;

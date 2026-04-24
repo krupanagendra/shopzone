@@ -297,4 +297,51 @@ const sendOrderStatusEmail = async ({ user, order, newStatus }) => {
     }
 };
 
-module.exports = { sendOrderConfirmationEmail, sendOrderStatusEmail };
+// ── Send daily admin report email (with PDF attachment) ───────────────────────
+const { generateDailyReportEmailHtml } = require("./emailTemplates");
+
+const sendDailyReportEmail = async (pdfBuffer, reportData = {}) => {
+    const adminEmail = process.env.ADMIN_EMAIL || process.env.GMAIL_USER;
+
+    if (!adminEmail) {
+        console.warn("⚠️  Daily report email skipped: ADMIN_EMAIL not set in .env");
+        return { success: false, reason: "no_admin_email" };
+    }
+    if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
+        console.warn("⚠️  Daily report email skipped: Gmail credentials not configured");
+        return { success: false, reason: "no_config" };
+    }
+
+    const today = new Date().toLocaleDateString("en-IN", {
+        weekday: "long", day: "numeric", month: "long", year: "numeric"
+    });
+
+    try {
+        const transporter = createTransporter();
+        const mailOptions = {
+            from: `"OmniKart AI" <${process.env.GMAIL_USER}>`,
+            to: adminEmail,
+            subject: `📊 Daily Business Report — OmniKart (${today})`,
+            html: generateDailyReportEmailHtml(reportData),
+        };
+
+        // Attach PDF only if we have a valid buffer
+        if (pdfBuffer && Buffer.isBuffer(pdfBuffer) && pdfBuffer.length > 0) {
+            mailOptions.attachments = [{
+                filename: `OmniKart_Daily_Report_${new Date().toISOString().slice(0, 10)}.pdf`,
+                content: pdfBuffer,
+                contentType: "application/pdf",
+            }];
+        }
+
+        await transporter.sendMail(mailOptions);
+        console.log(`✅ [EMAIL] Daily report sent to admin: ${adminEmail}`);
+        return { success: true };
+    } catch (err) {
+        console.error("❌ [EMAIL] Daily report email failed:", err.message);
+        return { success: false, reason: err.message };
+    }
+};
+
+module.exports = { sendOrderConfirmationEmail, sendOrderStatusEmail, sendDailyReportEmail };
+

@@ -44,8 +44,6 @@ const SectionTitle = ({ children }) => (
 
 export default function AdminDashboard() {
     const [stats, setStats] = useState(null);
-    const [orders, setOrders] = useState([]);
-    const [products, setProducts] = useState([]);
     const [systemStatus, setSystemStatus] = useState(null);
     const [aiLogs, setAiLogs] = useState([]);
     const [dashStats, setDashStats] = useState(null);
@@ -58,17 +56,13 @@ export default function AdminDashboard() {
 
     const fetchAll = async () => {
         try {
-            const [statsRes, ordersRes, productsRes, sysRes, logRes, dashRes] = await Promise.all([
+            const [statsRes, sysRes, logRes, dashRes] = await Promise.all([
                 adminAPI.getStats(),
-                orderAPI.getAllOrders(),
-                productAPI.getProducts({ pageSize: 100 }),
                 systemAPI.getStatus(),
                 adminAiAPI.getLogs(),
                 systemAPI.getDashboardStats()
             ]);
             setStats(statsRes.data);
-            setOrders(ordersRes.data);
-            setProducts(productsRes.data.products || []);
             setSystemStatus(sysRes.data);
             setAiLogs(logRes.data);
             setDashStats(dashRes.data);
@@ -123,40 +117,24 @@ export default function AdminDashboard() {
     // --- Chart data from REAL MongoDB stats ---
     const chartData = dashStats?.chartData || [];
 
-    // --- Revenue by Month from real orders ---
-    const revenueByMonth = (() => {
-        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-        const map = {};
-        months.forEach(m => map[m] = { month: m, revenue: 0, orders: 0 });
-        orders.forEach(o => {
-            const m = months[new Date(o.createdAt).getMonth()];
-            map[m].revenue += o.totalPrice || 0;
-            map[m].orders += 1;
-        });
-        return Object.values(map);
-    })();
+    // --- Revenue by Month from Backend ---
+    const revenueByMonth = dashStats?.revenueByMonth || [];
 
     // --- Orders by status pie chart ---
-    const ordersByStatus = (() => {
-        const map = {};
-        orders.forEach(o => { map[o.status] = (map[o.status] || 0) + 1; });
-        return Object.entries(map).map(([name, value]) => ({ name, value }));
-    })();
+    const ordersByStatus = dashStats?.ordersByStatus || [];
 
-    // --- Top 6 products by price ---
-    const topProducts = [...products]
-        .sort((a, b) => b.price - a.price)
-        .slice(0, 6)
-        .map(p => ({ name: (p.name || '').slice(0, 18) + "...", price: p.price, rating: p.rating, stock: p.countInStock }));
+    // --- Top products ---
+    const topProducts = (dashStats?.topProducts || []).map(p => ({
+        name: (p.name || '').slice(0, 18) + "...", 
+        price: p.price || 0, 
+        rating: p.rating || 0, 
+        stock: p.countInStock || p.salesLast7Days || 0
+    }));
 
     // --- Category breakdown ---
-    const categoryData = (() => {
-        const map = {};
-        products.forEach(p => { map[p.category] = (map[p.category] || 0) + 1; });
-        return Object.entries(map).map(([name, value]) => ({ name, value }));
-    })();
+    const categoryData = dashStats?.categoryData || [];
 
-    const recentOrders = orders.slice(0, 5);
+    const recentOrders = dashStats?.recentOrders || [];
 
     const STATUS_COLORS = {
         pending: { bg: "#fff8e1", color: "#f57c00" },

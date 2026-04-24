@@ -125,8 +125,8 @@ const CheckoutPage = () => {
                       <FaCreditCard className="text-2xl text-blue-600" />
                     </div>
                     <div>
-                      <p className="font-bold text-gray-800">Online Payment</p>
-                      <p className="text-xs text-gray-500">Pay securely via Razorpay</p>
+                      <p className="font-bold text-gray-800">Online Payment (Demo)</p>
+                      <p className="text-xs text-gray-500">Pay securely via Card, UPI, etc.</p>
                     </div>
                   </div>
                   <div className="flex gap-2 flex-wrap">
@@ -165,7 +165,7 @@ const CheckoutPage = () => {
             <div className="bg-white rounded-xl shadow p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-bold">
-                  {paymentMethod === "online" ? <><FaCreditCard className="inline" /> Online Payment</> : <><FaMoneyBillWave className="inline" /> Cash on Delivery</>}
+                  {paymentMethod === "online" ? <><FaCreditCard className="inline" /> Online Payment (Demo)</> : <><FaMoneyBillWave className="inline" /> Cash on Delivery</>}
                 </h2>
                 <button onClick={() => setStep(2)} className="text-amazon-blue text-sm hover:underline">← Change Method</button>
               </div>
@@ -181,7 +181,7 @@ const CheckoutPage = () => {
               {/* Payment method badge */}
               <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg mb-5 text-sm font-semibold
                 ${paymentMethod === "online" ? "bg-blue-50 text-blue-700" : "bg-green-50 text-green-700"}`}>
-                {paymentMethod === "online" ? <><FaCreditCard className="inline" /> Paying online via Razorpay</> : <><FaMoneyBillWave className="inline" /> Paying cash on delivery</>}
+                {paymentMethod === "online" ? <><FaCreditCard className="inline" /> Paying online securely</> : <><FaMoneyBillWave className="inline" /> Paying cash on delivery</>}
               </div>
 
               {/* Online payment — Razorpay popup (no wrapper needed) */}

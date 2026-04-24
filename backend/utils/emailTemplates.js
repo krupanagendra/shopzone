@@ -1,6 +1,6 @@
-const brandColor = "#4F46E5";
-const brandName = "ShopZone AI";
-const brandTagline = "Powered by Autonomous Intelligence";
+const brandColor = "#febd69";
+const brandName = "OmniKart";
+const brandTagline = "Powered by Autonomous AI Agents";
 
 // ── Shared HTML Components ──────────────────────────────────────────────────
 
@@ -167,41 +167,138 @@ const generateGenericEmailHtml = (subject, details) => `
 
 // ── Daily Report Email ──────────────────────────────────────────────────────
 
-const generateDailyReportEmailHtml = (reportData) => `
-    <div style="font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f4f6f8; padding: 20px;">
-      <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); overflow: hidden;">
-        ${generateHeader("Daily Business Intelligence 📈")}
-        <div style="padding: 30px;">
-          <p style="color: #555; font-size: 15px; margin-bottom: 25px;">The AI Report Agent has compiled today's metrics. A full PDF version with detailed charts is attached.</p>
-          
-          <div style="display: flex; gap: 10px; margin-bottom: 30px;">
-            <div style="flex: 1; background: #f0fdf4; border-radius: 8px; padding: 12px; text-align: center; border: 1px solid #bbf7d0;">
-              <p style="margin: 0; font-size: 11px; color: #166534; text-transform: uppercase;">Revenue</p>
-              <p style="margin: 5px 0 0; font-size: 18px; font-weight: 800; color: #111;">₹${reportData.revenue}</p>
-            </div>
-            <div style="flex: 1; background: #eff6ff; border-radius: 8px; padding: 12px; text-align: center; border: 1px solid #bfdbfe;">
-              <p style="margin: 0; font-size: 11px; color: #1e40af; text-transform: uppercase;">Orders</p>
-              <p style="margin: 5px 0 0; font-size: 18px; font-weight: 800; color: #111;">${reportData.totalSales}</p>
-            </div>
-            <div style="flex: 1; background: #fff7ed; border-radius: 8px; padding: 12px; text-align: center; border: 1px solid #fed7aa;">
-              <p style="margin: 0; font-size: 11px; color: #9a3412; text-transform: uppercase;">AOV</p>
-              <p style="margin: 5px 0 0; font-size: 18px; font-weight: 800; color: #111;">₹${reportData.aov || 0}</p>
-            </div>
-          </div>
+const generateDailyReportEmailHtml = (reportData = {}) => {
+  const revenue    = (reportData.revenue    || 0).toLocaleString('en-IN');
+  const orders     = reportData.totalSales  || 0;
+  const users      = reportData.totalUsers  || 0;
+  const aov        = orders > 0 ? Math.round((reportData.revenue || 0) / orders).toLocaleString('en-IN') : '0';
+  const suggestions = reportData.suggestions || ['Monitor inventory.', 'Maintain current pacing.'];
 
-          <div style="background: #f8fafc; border-radius: 8px; padding: 20px; border: 1px solid #e2e8f0;">
-            <h3 style="margin: 0 0 12px; font-size: 14px; color: #334155; display: flex; align-items: center;">
-              🧠 AI Strategic Insights
-            </h3>
-            <ul style="margin: 0; padding-left: 20px; font-size: 13px; line-height: 1.7; color: #475569;">
-              ${(reportData.suggestions || []).map(s => `<li style="margin-bottom: 8px;">${s}</li>`).join('')}
-            </ul>
-          </div>
-        </div>
-        ${generateFooter()}
-      </div>
-    </div>
-`;
+  // Build chart URL with real daily order data (last 7 days labels)
+  const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const chartData = reportData.dailySales || [0,0,0,0,0,0,0];
+  const chartUrl = `https://quickchart.io/chart?w=540&h=220&c=${encodeURIComponent(JSON.stringify({
+    type: 'bar',
+    data: {
+      labels: days,
+      datasets: [{
+        label: 'Orders',
+        data: chartData,
+        backgroundColor: 'rgba(254,189,105,0.85)',
+        borderColor: '#febd69',
+        borderWidth: 1,
+        borderRadius: 4
+      }]
+    },
+    options: {
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false } },
+        y: { beginAtZero: true, ticks: { precision: 0 } }
+      }
+    }
+  }))}`;
+
+  const insightsHtml = suggestions
+    .map((s, i) => `<tr><td style="padding:10px 14px;border-bottom:1px solid #f1f5f9;font-size:14px;color:#374151;line-height:1.5;"><span style="font-weight:700;color:#1e40af;margin-right:8px;">${i + 1}.</span>${s}</td></tr>`)
+    .join('');
+
+  const today = new Date().toLocaleDateString('en-IN', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Daily Report — OmniKart</title></head>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:'Segoe UI',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;padding:32px 16px;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.09);">
+
+        <!-- HEADER -->
+        <tr>
+          <td style="background:linear-gradient(135deg,#131921 0%,#232f3e 100%);padding:30px 40px;text-align:center;">
+            <p style="margin:0;font-size:30px;font-weight:900;color:#febd69;letter-spacing:-0.5px;">🏠 OmniKart</p>
+            <p style="margin:6px 0 0;font-size:13px;color:#94a3b8;">Autonomous AI — Daily Business Intelligence</p>
+          </td>
+        </tr>
+
+        <!-- DATE BANNER -->
+        <tr>
+          <td style="background:#1e40af;padding:12px 40px;text-align:center;">
+            <p style="margin:0;color:#ffffff;font-size:14px;font-weight:700;">📊 Daily Report &mdash; ${today}</p>
+          </td>
+        </tr>
+
+        <!-- BODY -->
+        <tr>
+          <td style="padding:32px 40px 0;">
+            <p style="margin:0 0 6px;font-size:21px;font-weight:700;color:#1e293b;">Hello, Admin! 👋</p>
+            <p style="margin:0 0 28px;font-size:14px;color:#64748b;line-height:1.7;">Here's your automated daily business intelligence summary. The full PDF report with detailed analytics is attached below.</p>
+
+            <!-- METRIC CARDS (table-based for email client compat) -->
+            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+              <tr>
+                <td width="31%" style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:16px;text-align:center;">
+                  <p style="margin:0;font-size:11px;font-weight:700;color:#166534;text-transform:uppercase;letter-spacing:1px;">Revenue (7d)</p>
+                  <p style="margin:8px 0 0;font-size:22px;font-weight:900;color:#111827;">&#8377;${revenue}</p>
+                </td>
+                <td width="4%"></td>
+                <td width="31%" style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:16px;text-align:center;">
+                  <p style="margin:0;font-size:11px;font-weight:700;color:#1d4ed8;text-transform:uppercase;letter-spacing:1px;">Orders (7d)</p>
+                  <p style="margin:8px 0 0;font-size:22px;font-weight:900;color:#111827;">${orders}</p>
+                </td>
+                <td width="4%"></td>
+                <td width="31%" style="background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:16px;text-align:center;">
+                  <p style="margin:0;font-size:11px;font-weight:700;color:#c2410c;text-transform:uppercase;letter-spacing:1px;">Total Users</p>
+                  <p style="margin:8px 0 0;font-size:22px;font-weight:900;color:#111827;">${users}</p>
+                </td>
+              </tr>
+            </table>
+
+            <!-- CHART -->
+            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+              <tr>
+                <td style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:20px;text-align:center;">
+                  <p style="margin:0 0 14px;font-size:14px;font-weight:700;color:#1e293b;">📈 Weekly Orders Trend</p>
+                  <img src="${chartUrl}" alt="Weekly Orders Chart" width="520" style="max-width:100%;height:auto;border-radius:8px;display:block;margin:0 auto;" />
+                </td>
+              </tr>
+            </table>
+
+            <!-- AI INSIGHTS -->
+            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;">
+              <tr>
+                <td style="background:#1e40af;padding:14px 18px;">
+                  <p style="margin:0;font-size:14px;font-weight:700;color:#ffffff;">🧠 AI Strategic Insights</p>
+                </td>
+              </tr>
+              ${insightsHtml}
+            </table>
+
+            <!-- NOTE -->
+            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:8px;">
+              <tr>
+                <td style="background:#fffbeb;border-left:4px solid #febd69;border-radius:0 8px 8px 0;padding:14px 16px;">
+                  <p style="margin:0;font-size:13px;color:#92400e;">🤖 <strong>Autonomous AI</strong> &mdash; This report was generated and dispatched automatically by the OmniKart AI agent pipeline.</p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- FOOTER -->
+        <tr>
+          <td style="background:#131921;padding:28px 40px;text-align:center;margin-top:32px;">
+            <p style="margin:0 0 4px;color:#febd69;font-size:15px;font-weight:700;">OmniKart AI Reporting Engine 🤖</p>
+            <p style="margin:0;color:#475569;font-size:12px;">&copy; 2026 OmniKart &middot; Final Year Academic Project &middot; Autonomous E-Commerce System</p>
+          </td>
+        </tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+};
 
 // ── Pricing Agent Report Email ──────────────────────────────────────────────
 

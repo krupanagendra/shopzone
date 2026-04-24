@@ -1,4 +1,5 @@
 const Suggestion = require("../models/Suggestion");
+const { sendSuggestionEmail } = require("../utils/emailService");
 
 // @desc    Create new product suggestion
 // @route   POST /api/suggestions
@@ -15,6 +16,11 @@ exports.createSuggestion = async (req, res) => {
       expectedPrice,
       referenceLink,
       customerEmail,
+    });
+
+    // Send email to admin
+    sendSuggestionEmail({ suggestion }).catch(err => {
+        console.error("⚠️  Suggestion email send error (suggestion still created):", err.message);
     });
 
     res.status(201).json({

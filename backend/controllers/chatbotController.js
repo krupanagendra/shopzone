@@ -152,7 +152,7 @@ const buildSystemPrompt = ({ user, allProducts, relevantProducts, cart, recentOr
     const trending = [...allProducts].sort((a, b) => b.numReviews - a.numReviews).slice(0, 5);
     const topRated = [...allProducts].sort((a, b) => b.rating - a.rating).slice(0, 5);
 
-    return `You are ZoneBot, an AI shopping assistant for ShopZone e-commerce.
+    return `You are ZoneBot, an AI shopping assistant for OmniKart e-commerce.
 Be helpful, friendly, concise. Use emojis naturally.
 
 ## CAPABILITIES
@@ -163,7 +163,7 @@ Add/remove cart, show cart, track orders, search products, compare, FAQ answers,
 - Delivery: 3-5 days standard | 1-2 days express (+$15)
 - 30-day returns | Refund in 5-7 days
 - Payments: Card, UPI, COD, Net Banking, Razorpay
-- Support: support@shopzone.com | Mon-Sat 9AM-6PM
+- Support: support@omnikart.com | Mon-Sat 9AM-6PM
 - Coupon: SAVE10 (10% off above $200)
 
 ## STORE INFO
@@ -454,7 +454,7 @@ exports.escalate = async (req, res) => {
             { escalated: true, isResolved: false }
         );
         res.json({
-            message: "✅ I've connected you to our support team! Someone will reach out to you at **" + req.user.email + "** within 2 hours.\n\nFor urgent help: support@shopzone.com | Mon-Sat 9AM-6PM",
+            message: "✅ I've connected you to our support team! Someone will reach out to you at **" + req.user.email + "** within 2 hours.\n\nFor urgent help: support@omnikart.com | Mon-Sat 9AM-6PM",
             escalated: true,
         });
     } catch (err) {

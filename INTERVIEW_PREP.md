@@ -1,10 +1,10 @@
-# 🎤 ShopZone AI — Interview Preparation Guide
+# 🎤 OmniKart AI — Interview Preparation Guide
 
 ---
 
 ## 2-Minute Elevator Pitch
 
-> "I built ShopZone AI — a full-stack e-commerce platform with an autonomous multi-agent system. It's built on MERN stack with 6 AI agents that run independently to manage inventory, pricing, orders, emails, and reporting — all without human intervention.
+> "I built OmniKart AI — a full-stack e-commerce platform with an autonomous multi-agent system. It's built on MERN stack with 6 AI agents that run independently to manage inventory, pricing, orders, emails, and reporting — all without human intervention.
 >
 > The agents communicate through Bull job queues backed by Redis, scheduled by node-cron. Each agent is idempotent, observable, and fault-tolerant — if one fails, the rest keep running, and Bull automatically retries with exponential backoff.
 >

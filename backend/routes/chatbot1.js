@@ -113,7 +113,7 @@ const callAI = async (systemPrompt, userMessage, history = [], imageBase64 = nul
         ];
         const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
             method: "POST",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}`, "HTTP-Referer": "http://localhost:5173", "X-Title": "ShopZone" },
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}`, "HTTP-Referer": "http://localhost:5173", "X-Title": "OmniKart" },
             body: JSON.stringify({ model: imageBase64 ? "google/gemini-flash-1.5" : "mistralai/mistral-7b-instruct:free", messages, max_tokens: 1500 }),
         });
         const data = await res.json();
@@ -200,7 +200,7 @@ router.post("/", protect, async (req, res) => {
         const trending = [...allProducts].sort((a, b) => b.numReviews - a.numReviews).slice(0, 5);
         const topRated = [...allProducts].sort((a, b) => b.rating - a.rating).slice(0, 5);
 
-        const systemPrompt = `You are ZoneBot, an intelligent AI shopping assistant for ShopZone e-commerce store.
+        const systemPrompt = `You are ZoneBot, an intelligent AI shopping assistant for OmniKart e-commerce store.
 You are helpful, friendly and conversational. Use emojis naturally.
 
 YOUR CAPABILITIES:

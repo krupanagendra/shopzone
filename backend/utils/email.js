@@ -18,7 +18,7 @@ const sendEmail = async (options) => {
 
   try {
     const mailOptions = {
-      from: `"ShopZone AI" <${process.env.GMAIL_USER}>`,
+      from: `"OmniKart AI" <${process.env.GMAIL_USER}>`,
       to: options.to,
       subject: options.subject,
       html: options.html,

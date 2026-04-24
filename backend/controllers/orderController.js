@@ -33,6 +33,11 @@ exports.createOrder = async (req, res) => {
     const isCOD = paymentMethod === "cod";
     const isPaid = !isCOD;
 
+    // Strict backend validation: do not create order if online payment is not confirmed successful
+    if (isPaid && (!paymentResult || paymentResult.status !== "completed")) {
+      return res.status(400).json({ message: "Payment not successful. Order cannot be created." });
+    }
+
     // Create order
     const order = await Order.create({
       user: req.user._id,
@@ -174,5 +179,26 @@ exports.deleteOrder = async (req, res) => {
     res.json({ message: "Order removed" });
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+};
+
+// ── GET /api/orders/:id/receipt ──────────────────────────────────────────────
+exports.downloadReceipt = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id).populate("user", "name email");
+    if (!order) return res.status(404).json({ message: "Order not found" });
+    if (order.user._id.toString() !== req.user._id.toString() && req.user.role !== "admin") {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    const { generateReceipt } = require("../utils/pdfGenerator");
+    const pdfBuffer = await generateReceipt(order, order.user);
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename=OmniKart_Receipt_${String(order._id).slice(-8).toUpperCase()}.pdf`);
+    res.send(pdfBuffer);
+  } catch (error) {
+    console.error("Receipt generation error:", error);
+    res.status(500).json({ message: "Failed to generate receipt" });
   }
 };

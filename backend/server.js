@@ -44,7 +44,7 @@ app.use('/api/debug', debugRouter);
 
 // System Health Check
 app.get("/", (req, res) => res.json({
-  message: "ShopZone AI API Running 🚀",
+  message: "OmniKart AI API Running 🚀",
   mode: process.env.DEMO_MODE === "true" ? "DEMO" : "PRODUCTION",
   timestamp: new Date()
 }));
@@ -63,7 +63,7 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 5000;
 const server = app.listen(PORT, () => {
   console.log(`\n══════════════════════════════════════════════════`);
-  console.log(`  ShopZone AI Server running on port ${PORT}`);
+  console.log(`  OmniKart AI Server running on port ${PORT}`);
   console.log(`  Mode: ${process.env.DEMO_MODE === "true" ? "🔥 DEMO" : "🏭 PRODUCTION"}`);
   console.log(`  Environment: ${process.env.NODE_ENV || "development"}`);
   console.log(`══════════════════════════════════════════════════\n`);

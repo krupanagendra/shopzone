@@ -1,7 +1,7 @@
 # Redis Setup Guide for Windows
 
 ## Why Redis?
-ShopZone AI uses **Bull** job queues backed by Redis to orchestrate AI agents. Redis acts as the message broker for inter-agent communication.
+OmniKart AI uses **Bull** job queues backed by Redis to orchestrate AI agents. Redis acts as the message broker for inter-agent communication.
 
 ---
 

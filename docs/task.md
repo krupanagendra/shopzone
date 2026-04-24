@@ -1,4 +1,4 @@
-# ShopZone AI — Production Polish Task Tracker
+# OmniKart AI — Production Polish Task Tracker
 
 ## Phase 1: Backend Bug Fixes & Edge Cases
 - [/] Set up Redis on Windows

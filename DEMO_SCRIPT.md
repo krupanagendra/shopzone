@@ -1,4 +1,4 @@
-# 🎬 ShopZone AI — Demo Script
+# 🎬 OmniKart AI — Demo Script
 
 > Step-by-step flow for a live demo or presentation. Total duration: ~10-15 minutes.
 

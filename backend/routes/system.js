@@ -9,12 +9,22 @@ const { emailQueue, reportQueue, pricingQueue, orderQueue, stockQueue, isRedisCo
 // Server boot time for uptime tracking
 const SERVER_START_TIME = new Date();
 
+const cache = {
+  status: { data: null, timestamp: 0 },
+  dashboard: { data: null, timestamp: 0 }
+};
+const CACHE_TTL = 15000; // 15 seconds
+
 // ─────────────────────────────────────────────────────────────────────────────
 // @route   GET /api/system/status
 // @desc    Complete system health, agent metrics, and queue status
 // ─────────────────────────────────────────────────────────────────────────────
 router.get("/status", async (req, res) => {
   try {
+    if (Date.now() - cache.status.timestamp < CACHE_TTL) {
+      return res.status(200).json(cache.status.data);
+    }
+
     const agents = ["EmailAgent", "StockAgent", "OrderLifecycleAgent", "ReportAgent", "PricingAgent", "AdminAI_Agent"];
 
     // Fetch last run + execution stats for each agent (single aggregation)
@@ -42,18 +52,23 @@ router.get("/status", async (req, res) => {
       };
     });
 
-    // Queue health
     let queues = {};
-    try {
-      const [emailQ, reportQ, pricingQ, orderQ, stockQ] = await Promise.all([
-        emailQueue.getJobCounts(),
-        reportQueue.getJobCounts(),
-        pricingQueue.getJobCounts(),
-        orderQueue.getJobCounts(),
-        stockQueue.getJobCounts()
-      ]);
-      queues = { emailQueue: emailQ, reportQueue: reportQ, pricingQueue: pricingQ, orderQueue: orderQ, stockQueue: stockQ };
-    } catch (qErr) {
+    if (isRedisConnected()) {
+      try {
+        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 1500));
+        const queueStats = Promise.all([
+          emailQueue.getJobCounts(),
+          reportQueue.getJobCounts(),
+          pricingQueue.getJobCounts(),
+          orderQueue.getJobCounts(),
+          stockQueue.getJobCounts()
+        ]);
+        const [emailQ, reportQ, pricingQ, orderQ, stockQ] = await Promise.race([queueStats, timeoutPromise]);
+        queues = { emailQueue: emailQ, reportQueue: reportQ, pricingQueue: pricingQ, orderQueue: orderQ, stockQueue: stockQ };
+      } catch (qErr) {
+        queues = { note: "Redis queue error/timeout" };
+      }
+    } else {
       queues = { note: "Redis not connected — queues unavailable" };
     }
 
@@ -69,7 +84,7 @@ router.get("/status", async (req, res) => {
     const uptimeHours = Math.floor(uptimeMs / 3600000);
     const uptimeMins = Math.floor((uptimeMs % 3600000) / 60000);
 
-    res.status(200).json({
+    const responseData = {
       status: "Operational 🟢",
       demoMode: process.env.DEMO_MODE === "true",
       redisConnected: isRedisConnected(),
@@ -79,7 +94,10 @@ router.get("/status", async (req, res) => {
       agentLastRuns: lastRuns,
       queues,
       timestamp: new Date()
-    });
+    };
+
+    cache.status = { data: responseData, timestamp: Date.now() };
+    res.status(200).json(responseData);
   } catch (error) {
     console.error("[SYSTEM ROUTE ERROR] /status failed:", error);
     res.status(500).json({ error: "Failed to fetch system status" });
@@ -92,6 +110,10 @@ router.get("/status", async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 router.get("/dashboard-stats", async (req, res) => {
   try {
+    if (Date.now() - cache.dashboard.timestamp < CACHE_TTL) {
+      return res.status(200).json(cache.dashboard.data);
+    }
+
     // Revenue via aggregation (not loading all orders into memory)
     const revenueAgg = await Order.aggregate([
       { $match: { status: "delivered" } },
@@ -147,13 +169,49 @@ router.get("/dashboard-stats", async (req, res) => {
       .limit(10)
       .lean();
 
-    res.status(200).json({
+    // -- New Aggregations to offload Frontend processing --
+    const revenueByMonthAgg = await Order.aggregate([
+      {
+        $group: {
+          _id: { $month: "$createdAt" },
+          revenue: { $sum: "$totalPrice" },
+          orders: { $sum: 1 }
+        }
+      },
+      { $sort: { _id: 1 } }
+    ]);
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const revenueByMonth = months.map((m, i) => {
+      const found = revenueByMonthAgg.find(x => x._id === i + 1);
+      return { month: m, revenue: found ? found.revenue : 0, orders: found ? found.orders : 0 };
+    });
+
+    const ordersByStatusAgg = await Order.aggregate([
+      { $group: { _id: "$status", value: { $sum: 1 } } }
+    ]);
+    const ordersByStatus = ordersByStatusAgg.map(x => ({ name: x._id, value: x.value }));
+
+    const categoryDataAgg = await Product.aggregate([
+      { $group: { _id: "$category", value: { $sum: 1 } } }
+    ]);
+    const categoryData = categoryDataAgg.map(x => ({ name: x._id, value: x.value }));
+
+    const recentOrders = await Order.find().sort({ createdAt: -1 }).limit(5).select("_id createdAt status totalPrice").lean();
+
+    const responseData = {
       totalRevenue: totalRevenue.toFixed(2),
       totalDeliveredOrders,
       chartData: last7DaysData,
       topProducts,
-      pricingChanges
-    });
+      pricingChanges,
+      revenueByMonth,
+      ordersByStatus,
+      categoryData,
+      recentOrders
+    };
+
+    cache.dashboard = { data: responseData, timestamp: Date.now() };
+    res.status(200).json(responseData);
   } catch (error) {
     console.error("[SYSTEM] dashboard-stats error:", error);
     res.status(500).json({ error: "Failed to fetch dashboard stats" });

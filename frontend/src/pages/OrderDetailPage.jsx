@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { orderAPI } from "../services/api";
 import Spinner from "../components/common/Spinner";
-import { FaCheckCircle, FaArrowLeft, FaRobot, FaTruck, FaBox, FaClock, FaGift } from "react-icons/fa";
+import { FaCheckCircle, FaArrowLeft, FaRobot, FaTruck, FaBox, FaClock, FaGift, FaDownload } from "react-icons/fa";
 
 const STATUS_STEPS = ["pending", "processing", "shipped", "delivered"];
 const STATUS_ICONS = [FaClock, FaBox, FaTruck, FaGift];
@@ -54,6 +54,17 @@ const OrderDetailPage = () => {
             <p className="text-gray-500 text-sm">Placed on {new Date(order.createdAt).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "long", year: "numeric" })}</p>
           </div>
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                const token = JSON.parse(localStorage.getItem("userInfo"))?.token;
+                if (token) {
+                  window.open(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/orders/${order._id}/receipt?token=${token}`, "_blank");
+                }
+              }}
+              className="flex items-center gap-1 text-gray-700 hover:text-amazon-blue bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-full text-sm font-semibold transition-colors"
+            >
+              <FaDownload /> Receipt
+            </button>
             {order.isPaid && (
               <span className="flex items-center gap-1 text-green-600 font-semibold bg-green-50 px-3 py-1 rounded-full text-sm">
                 <FaCheckCircle /> Paid

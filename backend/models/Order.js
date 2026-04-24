@@ -20,6 +20,7 @@ const orderSchema = new mongoose.Schema(
       country: String,
     },
     paymentMethod: { type: String, default: "razorpay" },
+    paymentLink: String,
     paymentResult: {
       id: String,
       status: String,
@@ -48,5 +49,9 @@ const orderSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+orderSchema.index({ createdAt: -1 });
+orderSchema.index({ status: 1 });
+orderSchema.index({ isPaid: 1 });
 
 module.exports = mongoose.model("Order", orderSchema);

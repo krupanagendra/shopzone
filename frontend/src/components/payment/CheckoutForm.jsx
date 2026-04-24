@@ -46,156 +46,155 @@ const loadRazorpayScript = () => {
   });
 };
 
-// ─── Online Payment Form (Razorpay) ──────────────────────────────────────────
+// ─── Online Payment Form ────────────────────────────────────────────────────────
 export const OnlinePaymentForm = ({ shippingAddress }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [emailSent, setEmailSent] = useState(false);
-  const [userEmail, setUserEmail] = useState("");
+  const [success, setSuccess] = useState(false);
+  const [demoMode, setDemoMode] = useState(false);
 
-  const handlePayment = async () => {
+  useState(() => {
+    paymentAPI.getKey().then(res => {
+      if (res.data?.demoMode) setDemoMode(true);
+    }).catch(err => console.warn("Failed to fetch demo mode status", err));
+  }, []);
+
+  const handlePayment = async (e) => {
+    e.preventDefault();
     setLoading(true);
     setError(null);
 
     try {
-      // 1. Load Razorpay script
-      console.log("[RAZORPAY] Loading Razorpay SDK...");
-      const scriptLoaded = await loadRazorpayScript();
-      if (!scriptLoaded) {
-        setError("Failed to load Razorpay SDK. Check your internet connection.");
-        setLoading(false);
-        return;
-      }
-      console.log("[RAZORPAY] ✅ SDK loaded");
+      // 1. Get Razorpay key & check demo mode
+      const keyRes = await paymentAPI.getKey();
+      const { keyId, demoMode: isDemo } = keyRes.data;
 
-      // 2. Create order on backend (with timeout)
-      console.log("[RAZORPAY] Creating order...");
-      let data;
-      try {
-        const response = await paymentAPI.createOrder();
-        data = response.data;
-        console.log("[RAZORPAY] ✅ Order created:", data.orderId);
-      } catch (orderErr) {
-        console.error("[RAZORPAY] ❌ Order creation failed:", orderErr);
-        const serverMsg = orderErr.response?.data?.message || "";
-        const serverHint = orderErr.response?.data?.hint || "";
-        const errMsg = serverMsg
-          ? `${serverMsg}${serverHint ? " — " + serverHint : ""}`
-          : "Failed to create payment order. Server may be unreachable.";
-        setError(errMsg);
-        toast.error(errMsg);
-        setLoading(false);
-        return;
-      }
+      // 2. Create order on backend
+      const orderRes = await paymentAPI.createOrder();
+      const { orderId, amount, currency } = orderRes.data;
 
-      // 3. Get user info for prefill
-      let userInfo = {};
-      try {
-        userInfo = JSON.parse(localStorage.getItem("userInfo") || "{}");
-      } catch {}
+      const isLoaded = await loadRazorpayScript();
+      if (!isLoaded) throw new Error("Razorpay SDK failed to load");
 
-      // 4. Open Razorpay checkout
       const options = {
-        key: data.keyId,
-        amount: data.amount,
-        currency: data.currency,
+        key: keyId,
+        amount,
+        currency,
         name: "OmniKart",
         description: "Order Payment",
-        order_id: data.orderId,
-        prefill: {
-          name: shippingAddress.fullName || userInfo.name || "Customer",
-          email: userInfo.email || "",
-          contact: userInfo.phone || "",
-        },
-        theme: {
-          color: "#131921",
-          backdrop_color: "rgba(0,0,0,0.6)",
-        },
-        config: {
-          display: {
-            hide: [{ method: "card" }, { method: "wallet" }]
-          }
-        },
+        order_id: orderId,
         handler: async function (response) {
           try {
-            console.log("[RAZORPAY] Payment response received, verifying...");
-            // 5. Verify payment on server
+            // Verify payment
             const verifyRes = await paymentAPI.verifyPayment({
-              razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_order_id: response.razorpay_order_id,
               razorpay_signature: response.razorpay_signature,
             });
 
             if (verifyRes.data.success) {
-              console.log("[RAZORPAY] ✅ Payment verified! Creating order...");
-              // 6. Create order in our system
-              const orderRes = await orderAPI.createOrder({
+              setSuccess(true);
+              const finalOrder = await orderAPI.createOrder({
                 shippingAddress,
-                paymentMethod: "online",
+                paymentMethod: "razorpay",
                 paymentResult: {
-                  id: response.razorpay_payment_id,
+                  id: verifyRes.data.paymentId,
                   status: "completed",
                   update_time: new Date().toISOString(),
+                  email_address: JSON.parse(localStorage.getItem("userInfo") || "{}").email || ""
                 },
-                razorpayPaymentId: response.razorpay_payment_id,
-                razorpayOrderId: response.razorpay_order_id,
-                isPaid: true,
+                razorpayPaymentId: verifyRes.data.paymentId,
+                razorpayOrderId: verifyRes.data.orderId,
+                isPaid: true
               });
-
-              console.log("[RAZORPAY] ✅ Order created:", orderRes.data._id);
+              
               dispatch(clearCart());
-
-              // Show email confirmation
-              try {
-                setUserEmail(userInfo.email || "");
-                setEmailSent(true);
-              } catch {}
-
-              toast.success("✅ Payment successful! Order confirmed & email sent 📧");
-              setTimeout(() => navigate(`/order/${orderRes.data._id}`), 2500);
-            } else {
-              setError("Payment verification failed. Please contact support.");
-              toast.error("Payment verification failed");
+              toast.success("✅ Payment Successful!");
+              setTimeout(() => navigate(`/order/${finalOrder.data._id}`), 2000);
             }
           } catch (err) {
-            console.error("[RAZORPAY] ❌ Verification error:", err);
-            const msg = err.response?.data?.message || "Payment verification failed";
-            setError(msg);
-            toast.error(msg);
+            toast.error("Payment verification failed");
+            setError("Payment verification failed");
           }
-          setLoading(false);
         },
-        modal: {
-          ondismiss: function () {
-            console.log("[RAZORPAY] Payment modal dismissed");
-            setLoading(false);
-            toast.info("Payment cancelled");
-          },
+        prefill: {
+          name: JSON.parse(localStorage.getItem("userInfo") || "{}").name || "Test User",
+          email: JSON.parse(localStorage.getItem("userInfo") || "{}").email || "test@example.com",
         },
+        theme: {
+          color: "#3399cc"
+        }
       };
 
-      const razorpayInstance = new window.Razorpay(options);
-      razorpayInstance.on("payment.failed", function (response) {
-        console.error("[RAZORPAY] ❌ Payment failed:", response.error);
-        setError(response.error.description || "Payment failed");
-        toast.error(response.error.description || "Payment failed");
-        setLoading(false);
+      const rzp = new window.Razorpay(options);
+      
+      // Override failures if in demo mode
+      rzp.on("payment.failed", async function (response) {
+        if (isDemo) {
+          console.log("[DEMO MODE] Intercepting payment failure and forcing success...");
+          try {
+            const failedPaymentId = response?.error?.metadata?.payment_id || `demo_fail_${Date.now()}`;
+            const failedOrderId = response?.error?.metadata?.order_id || orderId;
+
+            // Just simulate a successful verification
+            const verifyRes = await paymentAPI.verifyPayment({
+              razorpay_payment_id: failedPaymentId,
+              razorpay_order_id: failedOrderId,
+              razorpay_signature: "demo_signature",
+            });
+
+            if (verifyRes.data.success) {
+              setSuccess(true);
+              const finalOrder = await orderAPI.createOrder({
+                shippingAddress,
+                paymentMethod: "razorpay",
+                paymentResult: {
+                  id: verifyRes.data.paymentId,
+                  status: "completed",
+                  update_time: new Date().toISOString(),
+                  email_address: JSON.parse(localStorage.getItem("userInfo") || "{}").email || ""
+                },
+                razorpayPaymentId: verifyRes.data.paymentId,
+                razorpayOrderId: verifyRes.data.orderId,
+                isPaid: true
+              });
+              
+              dispatch(clearCart());
+              toast.success("✅ Payment Successful (Demo Mode Override)!");
+              setTimeout(() => navigate(`/order/${finalOrder.data._id}`), 2000);
+            }
+          } catch (err) {
+            setError("Demo mode fallback failed: " + err.message);
+          }
+        } else {
+          setError(`Payment Failed: ${response.error.description}`);
+          toast.error("Payment Failed");
+        }
       });
-      razorpayInstance.open();
+
+      rzp.open();
+
     } catch (err) {
-      console.error("[RAZORPAY] ❌ Error:", err);
-      const serverMsg = err.response?.data?.message || "";
-      const serverHint = err.response?.data?.hint || "";
-      const msg = serverMsg
-        ? `${serverMsg}${serverHint ? " — " + serverHint : ""}`
-        : "Payment failed. Please try again.";
+      console.error("Payment Initiation Error:", err);
+      const msg = err.response?.data?.message || err.message || "Failed to initiate payment";
       setError(msg);
       toast.error(msg);
+    } finally {
       setLoading(false);
     }
   };
+
+  if (success) {
+    return (
+      <div className="bg-green-50 border border-green-200 rounded-xl p-6 text-center">
+        <div className="text-4xl mb-3">✅</div>
+        <h3 className="text-xl font-bold text-green-800">Payment Successful & Order Confirmed</h3>
+        <p className="text-green-700 mt-2">Redirecting to your order details...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -206,34 +205,23 @@ export const OnlinePaymentForm = ({ shippingAddress }) => {
         </div>
       )}
 
-      {emailSent && <EmailConfirmBanner email={userEmail} />}
-
-      <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl">
-        <div className="flex items-start gap-3">
-          <span className="text-2xl">🔒</span>
-          <div>
-            <p className="font-semibold text-blue-700 text-sm">Secure Payment via Razorpay</p>
-            <p className="text-blue-600 text-xs mt-1">
-              You'll be redirected to Razorpay's secure checkout. Supports UPI, Net Banking & more.
-            </p>
+      {demoMode && (
+        <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl">
+          <div className="flex items-start gap-3">
+            <span className="text-2xl">🧪</span>
+            <div>
+              <p className="font-semibold text-blue-800 text-sm">Demo Mode Active</p>
+              <p className="text-blue-700 text-xs mt-1">
+                You can use real Razorpay test credentials or simulate a failure. Even if it fails, the system will record it as a success!
+              </p>
+            </div>
           </div>
         </div>
-      </div>
-
-      <div className="text-sm bg-amber-50 border border-amber-200 p-3 rounded-lg">
-        <p className="font-semibold text-amber-700 mb-1">🧪 Test Mode Enabled</p>
-        <p className="text-amber-600 text-xs">
-          Use Razorpay test credentials:
-        </p>
-        <ul className="text-amber-600 text-xs mt-1 space-y-0.5 ml-4 list-disc">
-          <li>UPI: <code className="bg-amber-100 px-1 rounded">success@razorpay</code></li>
-          <li>Net Banking: Select any bank, then click Success</li>
-        </ul>
-      </div>
+      )}
 
       <button onClick={handlePayment} disabled={loading}
-        className="w-full btn-primary py-3 text-lg disabled:opacity-50 flex items-center justify-center gap-2 transition-all hover:shadow-lg">
-        {loading ? <><Spinner /> Processing...</> : "💳 Pay with Razorpay"}
+        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg text-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2 mt-4">
+        {loading ? <><Spinner /> Processing...</> : "💳 Pay Online (Razorpay)"}
       </button>
     </div>
   );

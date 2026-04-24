@@ -1,5 +1,9 @@
 const crypto = require("crypto");
 const Cart = require("../models/Cart");
+const Order = require("../models/Order");
+const User = require("../models/User");
+const Product = require("../models/Product");
+const { sendOrderConfirmationEmail } = require("../utils/emailService");
 
 // ── Direct Razorpay API Client ───────────────────────────────────────────────
 // We call the Razorpay REST API directly using Node's fetch/axios instead of
@@ -183,6 +187,19 @@ exports.verifyPayment = async (req, res) => {
       return res.status(500).json({ message: "Razorpay secret key not configured on server" });
     }
 
+    const isDemoMode = process.env.DEMO_PAYMENT_MODE === 'true';
+
+    if (isDemoMode) {
+      console.log("[PAYMENT] 🧪 Demo Mode Active: Forcing successful payment verification for order:", razorpay_order_id);
+      return res.json({
+        success: true,
+        message: "Payment verified successfully (Demo Mode)",
+        paymentId: razorpay_payment_id || `demo_pay_${Date.now()}`,
+        orderId: razorpay_order_id,
+        isDemo: true
+      });
+    }
+
     const body = razorpay_order_id + "|" + razorpay_payment_id;
     const expectedSignature = crypto
       .createHmac("sha256", secret)
@@ -216,5 +233,169 @@ exports.getRazorpayKey = (req, res) => {
   if (!keyId) {
     return res.status(500).json({ message: "Razorpay key not configured" });
   }
-  res.json({ keyId });
+  res.json({ 
+    keyId,
+    demoMode: process.env.DEMO_PAYMENT_MODE === 'true'
+  });
+};
+
+// ── POST /api/payment/create-payment-link ────────────────────────────────────
+exports.createPaymentLink = async (req, res) => {
+  try {
+    const { shippingAddress } = req.body;
+    if (!shippingAddress?.fullName || !shippingAddress?.address) {
+      return res.status(400).json({ message: "Incomplete shipping address" });
+    }
+
+    const cart = await Cart.findOne({ user: req.user._id });
+    if (!cart || cart.items.length === 0) {
+      return res.status(400).json({ message: "Cart is empty" });
+    }
+
+    const itemsPrice = cart.items.reduce((acc, i) => acc + i.price * i.quantity, 0);
+    const shippingPrice = itemsPrice > 8400 ? 0 : 840;
+    const taxPrice = parseFloat((0.15 * itemsPrice).toFixed(2));
+    const totalPrice = parseFloat((itemsPrice + shippingPrice + taxPrice).toFixed(2));
+
+    // Create Order in DB
+    const order = await Order.create({
+      user: req.user._id,
+      items: cart.items.map((i) => ({
+        product: i.product,
+        name: i.name,
+        image: i.image,
+        price: i.price,
+        quantity: i.quantity,
+      })),
+      shippingAddress,
+      paymentMethod: "email_link",
+      itemsPrice,
+      shippingPrice,
+      taxPrice,
+      totalPrice,
+      isPaid: false,
+      status: "pending",
+    });
+
+    // Reduce stock (so items are reserved)
+    const bulkOps = cart.items.map(item => ({
+      updateOne: {
+        filter: { _id: item.product },
+        update: { $inc: { countInStock: -item.quantity, salesLast7Days: item.quantity } }
+      }
+    }));
+    if (bulkOps.length > 0) {
+      await Product.bulkWrite(bulkOps);
+    }
+    
+    // Clear Cart
+    cart.items = [];
+    await cart.save();
+
+    // Call Razorpay Payment Links API
+    const { key_id, key_secret } = getRazorpayConfig();
+    const https = require("https");
+    const user = await User.findById(req.user._id);
+
+    const payload = JSON.stringify({
+      amount: Math.round(totalPrice * 100),
+      currency: "INR",
+      accept_partial: false,
+      reference_id: order._id.toString(),
+      description: "OmniKart Order #" + String(order._id).slice(-8).toUpperCase(),
+      customer: {
+        name: user.name,
+        email: user.email
+      },
+      notify: { sms: false, email: false },
+      reminder_enable: false
+    });
+
+    const auth = Buffer.from(`${key_id}:${key_secret}`).toString("base64");
+
+    const paymentLinkData = await new Promise((resolve, reject) => {
+      const reqRP = https.request({
+        hostname: "api.razorpay.com",
+        path: "/v1/payment_links",
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Content-Length": Buffer.byteLength(payload),
+          Authorization: `Basic ${auth}`,
+        }
+      }, (resRP) => {
+        let body = "";
+        resRP.on("data", (chunk) => body += chunk);
+        resRP.on("end", () => {
+          if (resRP.statusCode >= 200 && resRP.statusCode < 300) resolve(JSON.parse(body));
+          else reject(new Error(body));
+        });
+      });
+      reqRP.on("error", reject);
+      reqRP.write(payload);
+      reqRP.end();
+    });
+
+    order.paymentLink = paymentLinkData.short_url;
+    order.razorpayOrderId = paymentLinkData.id;
+    await order.save();
+
+    // Email sending removed as per requirements
+
+    res.json({ message: "Payment link sent successfully", orderId: order._id });
+
+  } catch (error) {
+    console.error("[PAYMENT] ❌ Payment Link Error:", error);
+    res.status(500).json({ message: "Failed to create payment link" });
+  }
+};
+
+// ── POST /api/payment/webhook ────────────────────────────────────────────────
+exports.webhookHandler = async (req, res) => {
+  try {
+    const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
+    if (!secret) return res.status(500).send("Webhook secret not configured");
+
+    const signature = req.headers["x-razorpay-signature"];
+    const bodyString = JSON.stringify(req.body);
+
+    const expectedSignature = crypto.createHmac("sha256", secret).update(bodyString).digest("hex");
+    if (signature !== expectedSignature) {
+      console.warn("⚠️ Invalid Webhook Signature");
+      return res.status(400).send("Invalid signature");
+    }
+
+    const event = req.body.event;
+    if (event === "payment_link.paid") {
+      const paymentEntity = req.body.payload.payment_link.entity;
+      const orderId = paymentEntity.reference_id; 
+
+      const order = await Order.findById(orderId).populate("user");
+      if (order && !order.isPaid) {
+        order.isPaid = true;
+        order.paidAt = new Date();
+        order.status = "processing";
+        order.paymentResult = {
+          id: paymentEntity.payment_id || paymentEntity.id,
+          status: "completed",
+          update_time: new Date().toISOString(),
+          email_address: order.user.email
+        };
+        await order.save();
+        console.log(`✅ Webhook: Order ${orderId} marked as Paid`);
+
+        // Send Order Confirmation (with attached PDF)
+        try {
+          await sendOrderConfirmationEmail({ user: order.user, order });
+        } catch (e) {
+          console.error("Webhook email generation failed", e);
+        }
+      }
+    }
+
+    res.status(200).send("OK");
+  } catch (error) {
+    console.error("Webhook error:", error);
+    res.status(500).send("Error processing webhook");
+  }
 };

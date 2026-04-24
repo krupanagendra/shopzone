@@ -125,11 +125,11 @@ function selectProducts(allProducts, intent, message) {
 function buildPrompt({ user, allProducts, selectedProducts, cart, orders, categories, intent }) {
   const cartItems = cart?.items || [];
   const cartTotal = cartItems.reduce((s, i) => s + i.price * i.quantity, 0);
-  return `You are ZoneBot, a world-class AI shopping assistant for ShopZone ecommerce platform.
+  return `You are ZoneBot, a world-class AI shopping assistant for OmniKart ecommerce platform.
 Be intelligent, warm, concise. Sound like a knowledgeable friend.
 
 STORE: Free shipping above ₹100 | Delivery 3-5 days | 30-day returns | Refund 5-7 days
-Coupon: SAVE10 (10% off orders >₹200) | Support: support@shopzone.com Mon-Sat 9AM-6PM
+Coupon: SAVE10 (10% off orders >₹200) | Support: support@omnikart.com Mon-Sat 9AM-6PM
 Payments: Credit/Debit Card, UPI, Net Banking, COD, Razorpay
 Categories: ${categories.join(", ")} | Total products: ${allProducts.length}
 
@@ -360,7 +360,7 @@ router.post("/escalate", protect, async (req, res) => {
     if (ChatHistory && req.body?.sessionId) {
       await ChatHistory.findOneAndUpdate({ user: req.user._id, sessionId: req.body.sessionId }, { escalated: true }).catch(() => { });
     }
-    return res.json({ success: true, message: `✅ Connected to support!\n\nWe'll reach out to **${req.user.email}** within 2 hours.\n📧 support@shopzone.com | Mon–Sat 9AM–6PM` });
+    return res.json({ success: true, message: `✅ Connected to support!\n\nWe'll reach out to **${req.user.email}** within 2 hours.\n📧 support@omnikart.com | Mon–Sat 9AM–6PM` });
   } catch (err) { return res.status(500).json({ message: err.message }); }
 });
 

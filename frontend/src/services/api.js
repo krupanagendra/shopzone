@@ -88,15 +88,15 @@ export const adminAPI = {
 
 // System Monitoring
 export const systemAPI = {
-  getStatus: () => api.get('/system/status'),
-  getDashboardStats: () => api.get('/system/dashboard-stats'),
+  getStatus: () => api.get('/system/status', { timeout: 5000 }),
+  getDashboardStats: () => api.get('/system/dashboard-stats', { timeout: 8000 }),
   triggerAgent: (agent) => api.post('/system/trigger-agent', { agent }),
 };
 
 // Admin AI
 export const adminAiAPI = {
-  getLogs: () => api.get('/admin-ai/logs'),
-  queryAI: (data) => api.post('/admin-ai/query', data),
+  getLogs: () => api.get('/admin-ai/logs', { timeout: 5000 }),
+  queryAI: (data) => api.post('/admin-ai/query', data, { timeout: 20000 }), // Long timeout for LLM inference
 };
 
 // Suggestions

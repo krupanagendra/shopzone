@@ -1,5 +1,5 @@
 /**
- * ShopZone Prime Membership — Backend Routes
+ * OmniKart Prime Membership — Backend Routes
  * Amazon-style eligibility criteria:
  *   Tier 1 (Silver): 2+ orders OR ₹5,000+ total spend
  *   Tier 2 (Gold):   5+ orders OR ₹15,000+ total spend

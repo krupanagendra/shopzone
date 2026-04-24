@@ -1,4 +1,4 @@
-# 🏠 ShopZone AI — Autonomous E-Commerce Platform
+# 🏠 OmniKart AI — Autonomous E-Commerce Platform
 
 > A full-stack MERN e-commerce system powered by **6 autonomous AI agents** that manage inventory, pricing, orders, emails, reports, and admin intelligence — all without human intervention.
 
@@ -10,7 +10,7 @@
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│                        ShopZone AI System                            │
+│                        OmniKart AI System                            │
 │                                                                      │
 │  ┌────────────┐    ┌────────────────────┐    ┌────────────────────┐ │
 │  │  React UI  │───▶│   Express REST API  │───▶│    MongoDB Atlas   │ │
