@@ -58,7 +58,7 @@ const OrderDetailPage = () => {
               onClick={() => {
                 const token = JSON.parse(localStorage.getItem("userInfo"))?.token;
                 if (token) {
-                  window.open(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/orders/${order._id}/receipt?token=${token}`, "_blank");
+                  window.open(`${import.meta.env.VITE_API_URL}/api/orders/${order._id}/receipt?token=${token}`, "_blank");
                 }
               }}
               className="flex items-center gap-1 text-gray-700 hover:text-amazon-blue bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-full text-sm font-semibold transition-colors"

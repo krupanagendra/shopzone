@@ -7,28 +7,37 @@ const ChatHistory = require("../models/ChatHistory");
 // ─────────────────────────────────────────────────────────────────────────────
 //  INTENT DETECTION — classify user message before sending to AI
 // ─────────────────────────────────────────────────────────────────────────────
-const detectIntent = (message) => {
-    const msg = message.toLowerCase().trim();
+const detectIntent = async (message, historyText = "") => {
+    try {
+        const key = process.env.GEMINI_API_KEY;
+        if (!key) return "GENERAL";
 
-    const intents = {
-        PRODUCT_SEARCH: [/show me/, /find/, /search/, /looking for/, /need a/, /want a/, /suggest/, /recommend/, /under \d+/, /below \d+/, /best/, /top/, /cheap/, /affordable/, /budget/],
-        ADD_TO_CART: [/add.*(to cart|to my cart)/, /buy/, /purchase/, /order this/, /i want this/, /add it/, /add the (first|second|third|1st|2nd|3rd)/],
-        VIEW_CART: [/my cart/, /show cart/, /view cart/, /what('s| is) in/, /cart summary/, /cart items/],
-        ORDER_TRACKING: [/track/, /order status/, /where is my/, /my order/, /delivery status/, /shipped/, /dispatch/, /order #/, /order id/],
-        SHIPPING_POLICY: [/shipping/, /delivery time/, /how long/, /when will/, /free shipping/, /delivery charge/],
-        RETURN_POLICY: [/return/, /refund/, /exchange/, /money back/, /cancel order/, /replace/],
-        PAYMENT_HELP: [/payment/, /pay/, /upi/, /credit card/, /debit card/, /cod/, /cash on delivery/, /net banking/, /wallet/],
-        COMPARE_PRODUCTS: [/compare/, /difference between/, /vs/, /versus/, /which is better/, /which one/],
-        ESCALATE_HUMAN: [/human/, /agent/, /support/, /speak to someone/, /real person/, /customer care/, /complaint/],
-        GREETING: [/^hi$/, /^hello$/, /^hey$/, /good morning/, /good evening/, /howdy/, /what can you do/, /help me/],
-        CHECKOUT: [/checkout/, /place order/, /complete order/, /buy now/, /proceed/],
-        WISHLIST: [/wishlist/, /save for later/, /favourite/, /favorite/],
-    };
+        const prompt = `Classify the Current Message into exactly ONE of these intents:
+PRODUCT_SEARCH, ADD_TO_CART, VIEW_CART, ORDER_TRACKING, SHIPPING_POLICY, RETURN_POLICY, PAYMENT_HELP, COMPARE_PRODUCTS, ESCALATE_HUMAN, GREETING, CHECKOUT, WISHLIST, GENERAL.
+Return ONLY the intent string and nothing else.
+Consider the Previous Context if the Current Message is a short follow-up (e.g., "cheaper", "samsung", "similar").
 
-    for (const [intent, patterns] of Object.entries(intents)) {
-        if (patterns.some((p) => p.test(msg))) return intent;
+Previous Context: "${historyText}"
+Current Message: "${message}"`;
+
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
+        const res = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                contents: [{ role: "user", parts: [{ text: prompt }] }],
+                generationConfig: { maxOutputTokens: 10, temperature: 0.1 }
+            }),
+        });
+        const data = await res.json();
+        const intent = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim()?.toUpperCase() || "GENERAL";
+        
+        const validIntents = ["PRODUCT_SEARCH", "ADD_TO_CART", "VIEW_CART", "ORDER_TRACKING", "SHIPPING_POLICY", "RETURN_POLICY", "PAYMENT_HELP", "COMPARE_PRODUCTS", "ESCALATE_HUMAN", "GREETING", "CHECKOUT", "WISHLIST", "GENERAL"];
+        return validIntents.includes(intent) ? intent : "GENERAL";
+    } catch (err) {
+        console.error("Gemini Intent Error:", err.message);
+        return "GENERAL";
     }
-    return "GENERAL";
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -102,6 +111,15 @@ const getRelevantProducts = (allProducts, intent, message) => {
     const noProductIntents = ["SHOW_CART", "TRACK_ORDER", "SHIPPING_POLICY", "RETURN_POLICY", "PAYMENT_HELP", "ESCALATE_HUMAN", "GREETING", "CHECKOUT"];
     if (noProductIntents.includes(intent)) return allProducts.slice(0, 15);
 
+    let filtered = allProducts;
+    
+    // Quick brand filter for follow-ups
+    const brands = [...new Set(allProducts.map(p => p.brand?.toLowerCase()).filter(Boolean))];
+    const matchedBrand = brands.find(b => msg.includes(b));
+    if (matchedBrand) {
+        filtered = filtered.filter(p => p.brand?.toLowerCase() === matchedBrand);
+    }
+
     // Try to filter by category keyword in message
     const categoryMap = {
         "laptop|computer|pc|notebook|macbook": "Computers",
@@ -123,8 +141,8 @@ const getRelevantProducts = (allProducts, intent, message) => {
 
     for (const [keywords, category] of Object.entries(categoryMap)) {
         if (new RegExp(keywords).test(msg)) {
-            const filtered = allProducts.filter(p => p.category === category);
-            if (filtered.length > 0) return filtered.slice(0, 30);
+            const catFiltered = filtered.filter(p => p.category === category);
+            if (catFiltered.length > 0) return catFiltered.slice(0, 30);
         }
     }
 
@@ -132,9 +150,11 @@ const getRelevantProducts = (allProducts, intent, message) => {
     const priceMatch = msg.match(/under \$?(\d+)|below \$?(\d+)|less than \$?(\d+)/);
     if (priceMatch) {
         const maxPrice = parseInt(priceMatch[1] || priceMatch[2] || priceMatch[3]);
-        const filtered = allProducts.filter(p => p.price <= maxPrice);
-        if (filtered.length > 0) return filtered.slice(0, 30);
+        const priceFiltered = filtered.filter(p => p.price <= maxPrice);
+        if (priceFiltered.length > 0) return priceFiltered.slice(0, 30);
     }
+
+    if (matchedBrand && filtered.length > 0) return filtered.slice(0, 30);
 
     // Default: trending + top rated (max 40 products)
     const trending = [...allProducts].sort((a, b) => b.numReviews - a.numReviews).slice(0, 20);
@@ -277,23 +297,31 @@ exports.sendMessage = async (req, res) => {
 
         if (!message?.trim()) return res.status(400).json({ message: "Message is required" });
 
-        // ── 1. Detect intent ────────────────────────────────────────────────────
-        const intent = detectIntent(message);
+        // ── 1. Load chat session first for context ──────────────────────────────
+        const chatSession = await ChatHistory.findOne({ user: userId, sessionId }).lean();
+        const history = chatSession?.messages?.slice(-10) || [];
+        
+        // Lightweight context: previous user message
+        const lastUserMsg = [...history].reverse().find(m => m.role === "user");
+        const historyText = lastUserMsg ? lastUserMsg.content : "";
 
-        // ── 2. Load store context ───────────────────────────────────────────────
-        const [allProducts, cart, user, recentOrders, chatSession] = await Promise.all([
+        // ── 2. Detect intent ────────────────────────────────────────────────────
+        const intent = await detectIntent(message, historyText);
+
+        // ── 3. Load store context ───────────────────────────────────────────────
+        const [allProducts, cart, user, recentOrders] = await Promise.all([
             Product.find({}, "name brand category price rating countInStock isFeatured _id description image numReviews").lean(),
             Cart.findOne({ user: userId }).lean(),
             User.findById(userId).lean(),
             Order.find({ user: userId }).sort({ createdAt: -1 }).limit(5).lean(),
-            ChatHistory.findOne({ user: userId, sessionId }).lean(),
         ]);
 
         const categories = [...new Set(allProducts.map((p) => p.category))];
-        const history = chatSession?.messages?.slice(-10) || [];
 
-        // ── 3. Get relevant products based on intent (saves tokens) ────────────
-        const relevantProducts = getRelevantProducts(allProducts, intent, message);
+        // ── 4. Get relevant products based on intent (saves tokens) ────────────
+        // Combine history for product filtering so it remembers the category/brand
+        const searchContext = historyText ? `${historyText} ${message}` : message;
+        const relevantProducts = getRelevantProducts(allProducts, intent, searchContext);
 
         // ── 4. Build lean system prompt ─────────────────────────────────────────
         const systemPrompt = buildSystemPrompt({ user, allProducts, relevantProducts, cart, recentOrders, categories });

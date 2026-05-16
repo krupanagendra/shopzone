@@ -6,7 +6,7 @@ import { fetchWishlist } from "../../redux/slices/wishlistSlice";
 import { toast } from "react-toastify";
 import { FaRobot, FaTimes, FaBox, FaShoppingCart, FaHeart } from "react-icons/fa";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const API_BASE = import.meta.env.VITE_API_URL;
 
 const QUICK_ACTIONS = [
     { label: "Trending", msg: "Show me trending products" },

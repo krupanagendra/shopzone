@@ -6,7 +6,7 @@ import { toast } from "react-toastify";
 import BrandLogo from "../components/common/BrandLogo";
 import { FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaGift } from "react-icons/fa";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const API = import.meta.env.VITE_API_URL;
 
 // Floating particle background
 function Particles() {

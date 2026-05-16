@@ -83,7 +83,7 @@ const Navbar = () => {
   const fetchSuggestions = async (query) => {
     if (!query.trim()) { setSuggestions([]); return; }
     try {
-      const resp = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/products/search/suggestions?keyword=${query}`);
+      const resp = await fetch(`${import.meta.env.VITE_API_URL}/api/products/search/suggestions?keyword=${query}`);
       const data = await resp.json();
       setSuggestions(data);
     } catch (err) {
@@ -389,5 +389,4 @@ const Navbar = () => {
     </>
   );
 };
-
 export default Navbar;

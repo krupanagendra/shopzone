@@ -3,7 +3,7 @@ import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import { FaLock, FaGamepad, FaDice, FaUsers, FaMoneyBillWave, FaLink, FaCopy, FaGift } from "react-icons/fa";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const API = import.meta.env.VITE_API_URL;
 
 const getToken = () => {
     try { return JSON.parse(localStorage.getItem("userInfo") || "{}").token || ""; }

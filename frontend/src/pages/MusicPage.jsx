@@ -38,7 +38,7 @@ export default function MusicPage() {
     const checkAccess = async () => {
       try {
         const token = JSON.parse(localStorage.getItem("userInfo") || "{}").token || "";
-        const r = await fetch((import.meta.env.VITE_API_URL || "http://localhost:5000") + "/api/prime/status", {
+        const r = await fetch(import.meta.env.VITE_API_URL + "/api/prime/status", {
           headers: { "Content-Type": "application/json", Authorization: "Bearer " + token }
         });
         const d = await r.json();

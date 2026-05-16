@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { FaAward, FaMedal, FaGem, FaCrown, FaMoneyBillWave, FaBox, FaTag, FaHome, FaTrophy, FaStar, FaClipboardList, FaShoppingBag, FaChartLine, FaBullseye, FaLightbulb, FaArrowUp } from "react-icons/fa";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const API = import.meta.env.VITE_API_URL;
 
 const fmt = (n) => {
     try { return "₹" + Math.round(n || 0).toLocaleString("en-IN"); }

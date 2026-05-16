@@ -113,7 +113,7 @@ const callAI = async (systemPrompt, userMessage, history = [], imageBase64 = nul
         ];
         const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
             method: "POST",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}`, "HTTP-Referer": "http://localhost:5173", "X-Title": "OmniKart" },
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}`, "HTTP-Referer": process.env.CLIENT_URL || "http://localhost:5173", "X-Title": "OmniKart" },
             body: JSON.stringify({ model: imageBase64 ? "google/gemini-flash-1.5" : "mistralai/mistral-7b-instruct:free", messages, max_tokens: 1500 }),
         });
         const data = await res.json();

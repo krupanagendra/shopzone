@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { OnlinePaymentForm, CashOnDeliveryForm } from "../components/payment/CheckoutForm";
 import { FaBox, FaCreditCard, FaMoneyBillWave, FaMapMarkerAlt, FaReceipt, FaCrown, FaTruck, FaCheck } from "react-icons/fa";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const API = import.meta.env.VITE_API_URL;
 
 const fmt = (n) => `₹${Math.round(n).toLocaleString("en-IN")}`;
 

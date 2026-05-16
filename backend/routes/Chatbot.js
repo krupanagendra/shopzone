@@ -152,12 +152,13 @@ suggestions: 3 short follow-up chips
 
 STRICT RULES:
 1. ONLY use _id values from RELEVANT PRODUCTS list. NEVER invent IDs. Always valid JSON.
-2. STOCK HANDLING — critical:
-   - Product with Stock > 0: show normally, user can add to cart
-   - Product with OUT OF STOCK: set action ADD_TO_WISHLIST (not ADD_TO_CART)
-     In message say: "⚠️ **[name]** is currently out of stock. We're restocking it shortly! I've saved it to your wishlist. Here are similar available products you might like:"
-     Then show similar IN-STOCK products from same category in products array
-3. If user tries to buy out-of-stock item: save to wishlist + show alternatives
+2. MISSING & OUT OF STOCK HANDLING — critical:
+   - If the exact product requested is IN STOCK (> 0): show normally, user can add to cart.
+   - If the exact product requested is OUT OF STOCK, OR if the product DOES NOT EXIST in the RELEVANT PRODUCTS list:
+     In message say EXACTLY: "⚠️ What you are asking is out of stock now and these are the relevant products:"
+     Then show the most relevant available products from the list in the 'products' array.
+   - If setting action for an out-of-stock item you know exists, use ADD_TO_WISHLIST.
+3. If user tries to buy an out-of-stock item: save to wishlist + show alternatives.
 4. Always suggest 3 helpful follow-up chips`;
 }
 
