@@ -46,6 +46,7 @@ app.use("/api/orders", require("./routes/orders"));
 app.use("/api/payment", require("./routes/payment"));
 app.use("/api/wishlist", require("./routes/wishlist"));
 app.use("/api/admin", require("./routes/admin"));
+
 app.use("/api/chatbot", require("./routes/chatbot"));
 app.use("/api/prime", require("./routes/prime"));
 app.use("/api/gamification", require("./routes/gamification"));
