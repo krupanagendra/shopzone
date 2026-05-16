@@ -134,15 +134,15 @@ Payments: Credit/Debit Card, UPI, Net Banking, COD, Razorpay
 Categories: ${categories.join(", ")} | Total products: ${allProducts.length}
 
 USER: ${user.name} (${user.email})
-CART: ${cartItems.length > 0 ? \`\${cartItems.length} item(s) ₹\${cartTotal.toLocaleString("en-IN")} — \${cartItems.map(i => \`\${i.name} x\${i.quantity}\`).join(", ")}\` : "empty"}
-RECENT ORDERS: ${orders.length > 0 ? orders.map(o => \`#\${String(o._id).slice(-6)} ₹\${o.totalPrice.toLocaleString("en-IN")} \${o.isPaid ? "Paid" : "Pending"} \${o.isDelivered ? "Delivered" : "In Transit"}\`).join(" | ") : "none"}
-INTENT: \${intent}
-\${selectedProducts.length > 0 ? \`
-RELEVANT PRODUCTS (\${selectedProducts.length}):
-\${selectedProducts.map(p => \`ID:\${p._id} | \${p.name} | \${p.brand} | \${p.category} | ₹\${p.price.toLocaleString("en-IN")} | \${p.rating} Stars | \${p.countInStock > 0 ? \`Stock:\${p.countInStock}\` : "OUT OF STOCK"}\`).join("\\n")}\` : ""}
+CART: ${cartItems.length > 0 ? `${cartItems.length} item(s) ₹${cartTotal.toLocaleString("en-IN")} — ${cartItems.map(i => `${i.name} x${i.quantity}`).join(", ")}` : "empty"}
+RECENT ORDERS: ${orders.length > 0 ? orders.map(o => `#${String(o._id).slice(-6)} ₹${o.totalPrice.toLocaleString("en-IN")} ${o.isPaid ? "Paid" : "Pending"} ${o.isDelivered ? "Delivered" : "In Transit"}`).join(" | ") : "none"}
+INTENT: ${intent}
+${selectedProducts.length > 0 ? `
+RELEVANT PRODUCTS (${selectedProducts.length}):
+${selectedProducts.map(p => `ID:${p._id} | ${p.name} | ${p.brand} | ${p.category} | ₹${p.price.toLocaleString("en-IN")} | ${p.rating} Stars | ${p.countInStock > 0 ? `Stock:${p.countInStock}` : "OUT OF STOCK"}`).join("\n")}` : ""}
 
 RESPOND WITH VALID JSON ONLY — no text before or after, no markdown fences:
-{"message":"full response using \\n for newlines and **text** for bold","action":null,"actionProduct":null,"products":[],"compareProducts":null,"suggestions":["s1","s2","s3"]}
+{"message":"full response using \n for newlines and **text** for bold","action":null,"actionProduct":null,"products":[],"compareProducts":null,"suggestions":["s1","s2","s3"]}
 
 action: null|ADD_TO_CART|REMOVE_FROM_CART|ADD_TO_WISHLIST|SHOW_CART|TRACK_ORDER|GO_CHECKOUT|COMPARE|ESCALATE|SHOW_PRODUCTS
 actionProduct: {"_id":"EXACT_ID_FROM_LIST","name":"name","quantity":1} or null
@@ -159,7 +159,7 @@ STRICT RULES:
      Then show the most relevant available products from the list in the 'products' array.
    - If setting action for an out-of-stock item you know exists, use ADD_TO_WISHLIST.
 3. If user tries to buy an out-of-stock item: save to wishlist + show alternatives.
-4. Always suggest 3 helpful follow-up chips\`;
+4. Always suggest 3 helpful follow-up chips`;
 }
 
 // =============================================================================
@@ -252,10 +252,10 @@ router.post("/message", protect, async (req, res) => {
 
     let parsed = null;
     try {
-      const clean = rawAI.replace(/^```json\\s*/i, "").replace(/^```\\s*/i, "").replace(/```\\s*$/i, "").trim();
+      const clean = rawAI.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/```\s*$/i, "").trim();
       parsed = JSON.parse(clean);
     } catch {
-      const match = rawAI.match(/\\{[\\s\\S]*\\}/);
+      const match = rawAI.match(/\{[\s\S]*\}/);
       if (match) { try { parsed = JSON.parse(match[0]); } catch { } }
     }
 
@@ -327,7 +327,7 @@ router.post("/message", protect, async (req, res) => {
     });
   } catch (err) {
     console.error("❌ /chatbot/message:", err.message);
-    return res.status(500).json({ success: false, message: \`ZoneBot error: \${err.message}\`, action: null, products: [], suggestions: ["Try again", "Show products", "Contact support"] });
+    return res.status(500).json({ success: false, message: `ZoneBot error: ${err.message}`, action: null, products: [], suggestions: ["Try again", "Show products", "Contact support"] });
   }
 });
 
@@ -335,13 +335,13 @@ router.post("/translate", protect, async (req, res) => {
   try {
     const { text } = req.body;
     if (!text?.trim() || text.trim().length < 2) return res.json({ translated: text, language: "en", wasTranslated: false });
-    if (/^[\\x00-\\x7F]+$/.test(text.trim())) return res.json({ translated: text, language: "en", wasTranslated: false });
+    if (/^[\x00-\x7F]+$/.test(text.trim())) return res.json({ translated: text, language: "en", wasTranslated: false });
     const result = await callAI(
       "You are a translator. Respond with JSON only.",
-      \`Detect language and translate to English. Text: "\${text}"\\nReturn: {"detectedLanguage":"en/hi/kn/ta/te/other","translatedText":"english text","wasTranslated":true}\`,
+      `Detect language and translate to English. Text: "${text}"\nReturn: {"detectedLanguage":"en/hi/kn/ta/te/other","translatedText":"english text","wasTranslated":true}`,
       []
     );
-    const match = result.match(/\\{[\\s\\S]*\\}/);
+    const match = result.match(/\{[\s\S]*\}/);
     const data = match ? JSON.parse(match[0]) : null;
     return res.json({ translated: data?.translatedText || text, language: data?.detectedLanguage || "en", wasTranslated: data?.wasTranslated || false });
   } catch { return res.json({ translated: req.body?.text || "", language: "en", wasTranslated: false }); }
@@ -361,7 +361,7 @@ router.post("/escalate", protect, async (req, res) => {
     if (ChatHistory && req.body?.sessionId) {
       await ChatHistory.findOneAndUpdate({ user: req.user._id, sessionId: req.body.sessionId }, { escalated: true }).catch(() => { });
     }
-    return res.json({ success: true, message: \`✅ Connected to support!\\n\\nWe'll reach out to **\${req.user.email}** within 2 hours.\\n📧 support@omnikart.com | Mon–Sat 9AM–6PM\` });
+    return res.json({ success: true, message: `✅ Connected to support!\n\nWe'll reach out to **${req.user.email}** within 2 hours.\n📧 support@omnikart.com | Mon–Sat 9AM–6PM` });
   } catch (err) { return res.status(500).json({ message: err.message }); }
 });
 
@@ -385,7 +385,7 @@ router.post("/visual", protect, async (req, res) => {
       const key = process.env.GEMINI_API_KEY;
       if (!key) throw new Error("GEMINI_API_KEY not set");
 
-      const url = \`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=\${key}\`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
       const r = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -393,7 +393,7 @@ router.post("/visual", protect, async (req, res) => {
           contents: [{
             parts: [
               { inline_data: { mime_type: mediaType || "image/jpeg", data: imageBase64 } },
-              { text: \`Analyze this product image. Return JSON only: {"productName":"name","category":"category from: Electronics,Computers,Clothing,Home & Kitchen,Books,Gaming,Sports,Cameras,Beauty,Health,Toys,Music,Automotive,Pet Supplies","searchTerms":["term1","term2","term3"],"brand":"brand if visible or empty string"}\` }
+              { text: `Analyze this product image. Return JSON only: {"productName":"name","category":"category from: Electronics,Computers,Clothing,Home & Kitchen,Books,Gaming,Sports,Cameras,Beauty,Health,Toys,Music,Automotive,Pet Supplies","searchTerms":["term1","term2","term3"],"brand":"brand if visible or empty string"}` }
             ]
           }],
           generationConfig: { maxOutputTokens: 200 }
@@ -420,7 +420,7 @@ router.post("/visual", protect, async (req, res) => {
       const clean = analysisText.replace(/```json|```/g, "").trim();
       analysis = JSON.parse(clean);
     } catch {
-      const m = analysisText.match(/\\{[\\s\\S]*\\}/);
+      const m = analysisText.match(/\{[\s\S]*\}/);
       if (m) { try { analysis = JSON.parse(m[0]); } catch { } }
     }
 
