@@ -2,7 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const connectDB = require("./config/db");
-const errorHandler = require("./middleware/errorHandler"); 
+const errorHandler = require("./middleware/errorHandler");
 const startScheduler = require("./cron/scheduler");
 
 connectDB();
@@ -46,7 +46,7 @@ app.use("/api/orders", require("./routes/orders"));
 app.use("/api/payment", require("./routes/payment"));
 app.use("/api/wishlist", require("./routes/wishlist"));
 app.use("/api/admin", require("./routes/admin"));
-app.use("/api/chatbot", require("./routes/chatbot"));
+app.use("/api/chatbot", require("./routes/Chatbot"));
 app.use("/api/prime", require("./routes/Prime"));
 app.use("/api/gamification", require("./routes/gamification"));
 app.use("/api/admin-ai", require("./routes/adminAi"));
