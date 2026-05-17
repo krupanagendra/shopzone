@@ -8,7 +8,7 @@ import React, { Suspense } from "react";
 import ProtectedRoute from "./components/common/ProtectedRoute";
 
 const ZoneBot = React.lazy(() => import("./components/chatbot/ZoneBot"));
-import PrimePage from "./pages/PrimePage";
+import PrimePage from "./pages/primepage";
 import ScratchCardPage from "./pages/Scratchcardpage";
 import HomePage from "./pages/HomePage";
 import ProductsPage from "./pages/ProductsPage";
