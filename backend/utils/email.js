@@ -1,24 +1,35 @@
 const nodemailer = require("nodemailer");
 
-// Unified email configuration — uses GMAIL_USER + GMAIL_APP_PASSWORD only
+// Unified email configuration — uses EMAIL + EMAIL_PASS only
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false,
+
   auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_APP_PASSWORD,
+    user: process.env.EMAIL,
+    pass: process.env.EMAIL_PASS,
   },
+
+  tls: {
+    rejectUnauthorized: false,
+  },
+
+  connectionTimeout: 10000,
+  greetingTimeout: 10000,
+  socketTimeout: 10000,
 });
 
 const sendEmail = async (options) => {
   // Validate config
-  if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
-    console.warn("⚠️  Email skipped: GMAIL_USER or GMAIL_APP_PASSWORD not set in .env");
+  if (!process.env.EMAIL || !process.env.EMAIL_PASS) {
+    console.warn("⚠️  Email skipped: EMAIL or EMAIL_PASS not set in .env");
     return { success: false, error: "Email not configured" };
   }
 
   try {
     const mailOptions = {
-      from: `"OmniKart AI" <${process.env.GMAIL_USER}>`,
+      from: `"OmniKart AI" <${process.env.EMAIL}>`,
       to: options.to,
       subject: options.subject,
       html: options.html,

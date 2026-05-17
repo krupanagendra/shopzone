@@ -11,20 +11,32 @@ const generateToken = (id) => jwt.sign({ id }, process.env.JWT_SECRET, { expires
 
 // ── Nodemailer transporter (Gmail free SMTP) ──────────────────────────────────
 const createTransporter = () => nodemailer.createTransport({
-  service: "gmail",
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false,
+
   auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_APP_PASSWORD, // Gmail App Password (16 chars)
+    user: process.env.EMAIL,
+    pass: process.env.EMAIL_PASS,
   },
+
+  tls: {
+    rejectUnauthorized: false,
+  },
+
+  connectionTimeout: 10000,
+  greetingTimeout: 10000,
+  socketTimeout: 10000,
 });
 
 // ── Send OTP email ────────────────────────────────────────────────────────────
 const sendOTPEmail = async (email, name, otp) => {
   const transporter = createTransporter();
-  await transporter.sendMail({
-    from: `"OmniKart" <${process.env.GMAIL_USER}>`,
-    to: email,
-    subject: "🔐 Your OmniKart Verification Code",
+  try {
+    await transporter.sendMail({
+      from: `"OmniKart" <${process.env.EMAIL}>`,
+      to: email,
+      subject: "🔐 Your OmniKart Verification Code",
     html: `
 <!DOCTYPE html>
 <html>
@@ -72,7 +84,11 @@ const sendOTPEmail = async (email, name, otp) => {
   </table>
 </body>
 </html>`,
-  });
+    });
+  } catch (err) {
+    console.error("Nodemailer sendMail Error:", err);
+    throw err;
+  }
 };
 
 // ── STEP 1: Send OTP — POST /api/auth/send-otp ────────────────────────────────
@@ -121,7 +137,7 @@ exports.sendOTP = async (req, res) => {
   } catch (err) {
     console.error("Send OTP error:", err.message);
     if (err.message.includes("Invalid login") || err.message.includes("Username and Password")) {
-      return res.status(500).json({ message: "Email service error. Please check GMAIL_USER and GMAIL_APP_PASSWORD in .env" });
+      return res.status(500).json({ message: "Email service error. Please check EMAIL and EMAIL_PASS in .env" });
     }
     return res.status(500).json({ message: "Failed to send OTP. Please try again." });
   }

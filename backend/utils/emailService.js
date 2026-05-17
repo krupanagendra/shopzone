@@ -8,11 +8,19 @@ const nodemailer = require("nodemailer");
 // ── Create reusable transporter ───────────────────────────────────────────────
 const createTransporter = () => {
     return nodemailer.createTransport({
-        service: "gmail",
+        host: "smtp.gmail.com",
+        port: 587,
+        secure: false,
         auth: {
-            user: process.env.GMAIL_USER,
-            pass: process.env.GMAIL_APP_PASSWORD,
+            user: process.env.EMAIL,
+            pass: process.env.EMAIL_PASS,
         },
+        tls: {
+            rejectUnauthorized: false,
+        },
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        socketTimeout: 10000,
     });
 };
 
@@ -237,8 +245,8 @@ const sendOrderConfirmationEmail = async ({ user, order }) => {
         console.warn("⚠️  Email skipped: no user email");
         return { success: false, reason: "no_email" };
     }
-    if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
-        console.warn("⚠️  Email skipped: GMAIL_USER or GMAIL_APP_PASSWORD not set in .env");
+    if (!process.env.EMAIL || !process.env.EMAIL_PASS) {
+        console.warn("⚠️  Email skipped: EMAIL or EMAIL_PASS not set in .env");
         return { success: false, reason: "no_config" };
     }
 
@@ -250,7 +258,7 @@ const sendOrderConfirmationEmail = async ({ user, order }) => {
             : `✅ Order Confirmed #${String(order._id).slice(-8).toUpperCase()} — OmniKart`;
 
         await transporter.sendMail({
-            from: `"OmniKart" <${process.env.GMAIL_USER}>`,
+            from: `"OmniKart" <${process.env.EMAIL}>`,
             to: user.email,
             subject,
             html: buildOrderEmailHTML({ user, order }),
@@ -267,7 +275,7 @@ const sendOrderConfirmationEmail = async ({ user, order }) => {
 
 // ── Send order status update email ────────────────────────────────────────────
 const sendOrderStatusEmail = async ({ user, order, newStatus }) => {
-    if (!user?.email || !process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
+    if (!user?.email || !process.env.EMAIL || !process.env.EMAIL_PASS) {
         return { success: false };
     }
 
@@ -284,7 +292,7 @@ const sendOrderStatusEmail = async ({ user, order, newStatus }) => {
     try {
         const transporter = createTransporter();
         await transporter.sendMail({
-            from: `"OmniKart" <${process.env.GMAIL_USER}>`,
+            from: `"OmniKart" <${process.env.EMAIL}>`,
             to: user.email,
             subject: `${statusInfo.emoji} Order ${newStatus.charAt(0).toUpperCase() + newStatus.slice(1)} #${String(order._id).slice(-8).toUpperCase()} — OmniKart`,
             html: buildOrderEmailHTML({ user, order, type: "status" }),
@@ -301,13 +309,13 @@ const sendOrderStatusEmail = async ({ user, order, newStatus }) => {
 const { generateDailyReportEmailHtml } = require("./emailTemplates");
 
 const sendDailyReportEmail = async (pdfBuffer, reportData = {}) => {
-    const adminEmail = process.env.ADMIN_EMAIL || process.env.GMAIL_USER;
+    const adminEmail = process.env.ADMIN_EMAIL || process.env.EMAIL;
 
     if (!adminEmail) {
         console.warn("⚠️  Daily report email skipped: ADMIN_EMAIL not set in .env");
         return { success: false, reason: "no_admin_email" };
     }
-    if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
+    if (!process.env.EMAIL || !process.env.EMAIL_PASS) {
         console.warn("⚠️  Daily report email skipped: Gmail credentials not configured");
         return { success: false, reason: "no_config" };
     }
@@ -319,7 +327,7 @@ const sendDailyReportEmail = async (pdfBuffer, reportData = {}) => {
     try {
         const transporter = createTransporter();
         const mailOptions = {
-            from: `"OmniKart AI" <${process.env.GMAIL_USER}>`,
+            from: `"OmniKart AI" <${process.env.EMAIL}>`,
             to: adminEmail,
             subject: `📊 Daily Business Report — OmniKart (${today})`,
             html: generateDailyReportEmailHtml(reportData),
